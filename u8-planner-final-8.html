@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U8 Match Planner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Outfit:wght@300;400;500;600;700&display=swap');
+:root {
+  --bg:#0a1a0c; --surface:#111f13; --card:#182219; --border:#243828;
+  --green:#4ade80; --green-dim:#22c55e; --yellow:#fbbf24; --white:#ecfdf5;
+  --muted:#6b9475; --str:#f43f5e; --mid:#f97316; --def:#3b82f6; --gk:#a855f7;
+  --rest-bg:#1a2a1c; --rest-text:#3d5c42;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--white);min-height:100vh;padding:20px 16px 60px}
+.page{max-width:1020px;margin:0 auto;padding-top:8px}
+header{text-align:center;padding:28px 0 24px}
+header h1{font-family:'Barlow Condensed',sans-serif;font-size:3rem;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:var(--yellow);line-height:1;text-shadow:0 0 40px rgba(251,191,36,.3)}
+header p{color:var(--muted);font-size:.82rem;margin-top:8px;letter-spacing:1px}
+.section-label{font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.roster-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 20px;margin-bottom:16px}
+.roster-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.avail-count{font-size:.8rem;color:var(--muted)}
+.avail-count strong{color:var(--green)}
+.roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.player-chip{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;user-select:none;transition:all .2s;position:relative}
+.player-chip:hover{border-color:var(--muted)}
+.player-chip.unavailable{opacity:.38;border-style:dashed;background:var(--bg)}
+.player-chip.unavailable::after{content:'✕';position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:.7rem;color:var(--rest-text)}
+.player-chip.gk1{border-color:var(--gk);background:rgba(168,85,247,.15)}
+.player-chip.gk2{border-color:var(--green-dim);background:rgba(74,222,128,.12)}
+.chip-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.chip-dot.STR{background:var(--str)} .chip-dot.MID{background:var(--mid)} .chip-dot.DEF{background:var(--def)}
+.chip-name{font-size:.85rem;font-weight:600;flex:1;outline:none;border-radius:4px;min-width:20px}
+.chip-name:focus{background:rgba(255,255,255,.08);padding:0 3px;margin:0 -3px}
+.chip-pref{font-size:.68rem;color:var(--muted);font-weight:400}
+.pref-btn{font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:10px;border:1.5px solid transparent;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;transition:all .15s;background:transparent;font-family:'Outfit',sans-serif}
+.pref-btn:hover{opacity:.8;transform:scale(1.08)}
+.pref-STR{color:var(--str);border-color:rgba(244,63,94,.4)}
+.pref-MID{color:var(--mid);border-color:rgba(249,115,22,.4)}
+.pref-DEF{color:var(--def);border-color:rgba(59,130,246,.4)}
+.gk-panel{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.gk-half{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
+.gk-half-label{font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.gk-half.h1 .gk-half-label{color:var(--gk)} .gk-half.h2 .gk-half-label{color:var(--green-dim)}
+.gk-buttons{display:flex;flex-wrap:wrap;gap:6px}
+.gk-btn{padding:5px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-family:'Outfit',sans-serif;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .15s}
+.gk-btn:hover:not(:disabled){border-color:var(--muted);color:var(--white)}
+.gk-btn.sel-h1{border-color:var(--gk);background:rgba(168,85,247,.2);color:var(--white)}
+.gk-btn.sel-h2{border-color:var(--green-dim);background:rgba(74,222,128,.15);color:var(--white)}
+.gk-btn:disabled{opacity:.3;cursor:not-allowed}
+.score-bar{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 18px;margin-bottom:20px;flex-wrap:wrap}
+.score-icon{font-size:1.6rem;line-height:1}
+.score-desc{flex:1;font-size:.8rem;color:var(--muted)}
+.score-desc strong{color:var(--white);display:block;margin-bottom:2px}
+.gk-note-tag{background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);color:var(--gk);padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600}
+.timeline-wrap{margin-bottom:16px}
+.timeline{display:flex;gap:6px;flex-wrap:wrap}
+.rot-chip{padding:8px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;text-align:center;min-width:70px}
+.rot-chip:hover{border-color:var(--muted)}
+.rot-chip.active{border-color:var(--yellow);background:rgba(251,191,36,.12)}
+.rot-chip .rnum{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;color:var(--yellow);display:block;line-height:1}
+.rot-chip .rtime{font-size:.62rem;color:var(--muted);display:block;margin-top:2px}
+.rot-chip.active .rtime{color:var(--green)}
+.pitch-container{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px}
+.pitch-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--card)}
+.pitch-header h3{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--yellow)}
+.pitch-legend{display:flex;gap:10px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--muted)}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+.pitch-svg-wrap{padding:16px;display:flex;justify-content:center}
+.half-block{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;overflow:hidden}
+.half-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border)}
+.half-hdr h2{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+.half-hdr h2.h1{color:var(--gk)} .half-hdr h2.h2{color:var(--green-dim)}
+.gk-tag-small{padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:700;background:rgba(168,85,247,.2);border:1px solid var(--gk);color:var(--gk)}
+table.sched{width:100%;border-collapse:collapse}
+table.sched th{padding:8px 14px;font-family:'Barlow Condensed',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);background:rgba(0,0,0,.25);text-align:left;border-bottom:1px solid var(--border)}
+table.sched th.rth{text-align:center;border-left:1px solid var(--border);font-size:.73rem}
+table.sched th .ts{display:block;font-family:'Outfit',sans-serif;font-size:.62rem;font-weight:500;color:var(--green-dim);letter-spacing:0;margin-top:2px}
+table.sched td{padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+table.sched td.pc{text-align:center;border-left:1px solid var(--border)}
+table.sched tr:last-child td{border-bottom:none}
+table.sched tr:hover td{background:rgba(255,255,255,.015)}
+.pnc{display:flex;align-items:center;gap:7px}
+.av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;background:var(--card);border:1.5px solid var(--border);color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap}
+.pill.STR{background:rgba(244,63,94,.85);color:#fff} .pill.MID{background:rgba(249,115,22,.85);color:#fff}
+.pill.DEF{background:rgba(59,130,246,.85);color:#fff} .pill.GK{background:rgba(168,85,247,.85);color:#fff}
+.pill.REST{background:var(--rest-bg);color:var(--rest-text);border:1px dashed var(--rest-text)}
+.pill.pref::after{content:'★';font-size:.6rem;margin-left:2px}
+.coverage-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.coverage-panel h3{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--yellow);margin-bottom:14px}
+.cov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px}
+.cov-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.cov-name{font-size:.8rem;font-weight:700;margin-bottom:3px}
+.cov-pref{font-size:.65rem;color:var(--muted);font-weight:400}
+.cov-pills{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.cov-pills .pill{font-size:.65rem;padding:2px 7px}
+.cov-check{font-size:.68rem;margin-top:4px}
+.cov-check.ok{color:var(--green)} .cov-check.good{color:var(--yellow)} .cov-check.warn{color:var(--muted)}
+.notes{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:12px;padding:14px 18px;font-size:.8rem;line-height:1.8;color:rgba(236,253,245,.65)}
+.notes strong{color:var(--yellow);display:block;margin-bottom:4px;font-family:'Barlow Condensed',sans-serif;font-size:.95rem;letter-spacing:1px}
+.notes li{list-style:none}
+.notes li::before{content:"→ ";color:var(--yellow)}
+.placeholder{text-align:center;padding:50px 20px;color:var(--muted);font-size:.88rem}
+.ov-cell{display:flex;flex-direction:column;align-items:center;gap:3px}
+.ov-btns{display:flex;gap:2px;opacity:0;transition:opacity .15s}
+table.sched tr:hover .ov-btns{opacity:1}
+@media(max-width:640px){.ov-btns{opacity:1}}
+.ov-btn{padding:2px 5px;border-radius:5px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:.65rem;cursor:pointer;transition:all .12s;font-family:'Outfit',sans-serif}
+.ov-btn:hover{border-color:var(--muted);color:var(--white)}
+.ov-btn.ov-active{border-color:var(--yellow);background:rgba(251,191,36,.18);color:var(--yellow)}
+.ov-btn.ov-clear{border-color:var(--str);color:var(--str)}
+.pill.overridden{outline:2px solid var(--yellow);outline-offset:1px}
+.ov-clear-all{margin-top:6px;font-size:.72rem;color:var(--muted);cursor:pointer;text-align:right;padding:0 4px}
+.ov-clear-all:hover{color:var(--str)}
+.formation-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:16px}
+.formation-choice{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.formation-btn{flex:1;min-width:120px;padding:10px 16px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;transition:all .2s;text-align:center}
+.formation-btn:hover{border-color:var(--muted);color:var(--white)}
+.formation-btn.active{border-color:var(--yellow);background:rgba(251,191,36,.12);color:var(--yellow)}
+.formation-btn .f-sub{display:block;font-family:'Outfit',sans-serif;font-size:.65rem;font-weight:400;letter-spacing:.5px;color:var(--muted);margin-top:2px;text-transform:none}
+.lock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.lock-row{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:7px 10px}
+.lock-name{font-size:.82rem;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lock-btns{display:flex;gap:3px;flex-shrink:0}
+.lock-btn{padding:3px 7px;border-radius:6px;border:1.5px solid transparent;background:transparent;font-size:.68rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Outfit',sans-serif;letter-spacing:.3px}
+.lock-btn:hover{opacity:.8}
+.lock-btn.STR{color:var(--str);border-color:rgba(244,63,94,.35)}
+.lock-btn.MID{color:var(--mid);border-color:rgba(249,115,22,.35)}
+.lock-btn.DEF{color:var(--def);border-color:rgba(59,130,246,.35)}
+.lock-btn.active.STR{background:rgba(244,63,94,.25);border-color:var(--str)}
+.lock-btn.active.MID{background:rgba(249,115,22,.25);border-color:var(--mid)}
+.lock-btn.active.DEF{background:rgba(59,130,246,.25);border-color:var(--def)}
+.lock-icon{font-size:.65rem;margin-left:2px}
+
+/* ── STICKY TIMER ── */
+#timer-bar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,26,12,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:0;
+}
+#timer-bar-inner{
+  max-width:1020px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;gap:12px;flex-wrap:wrap;
+}
+#timer-display{display:flex;align-items:baseline;gap:10px}
+#timer-rot-label{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:.9rem;font-weight:700;letter-spacing:2px;
+  color:var(--muted);text-transform:uppercase;
+}
+#timer-time{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:2.4rem;font-weight:900;letter-spacing:2px;
+  color:var(--yellow);line-height:1;
+  transition:color .3s;
+}
+#timer-time.urgent{color:var(--str);}
+#timer-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#timer-controls button{
+  font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:700;
+  padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);
+  background:var(--card);color:var(--white);cursor:pointer;transition:all .15s;
+}
+#timer-controls button:hover{border-color:var(--muted)}
+#timer-startstop{border-color:var(--green-dim)!important;color:var(--green)!important;}
+#timer-startstop.running{border-color:var(--str)!important;color:#f87171!important;}
+#timer-next{border-color:var(--yellow)!important;color:var(--yellow)!important;}
+#timer-mins{
+  width:52px;padding:5px 6px;border-radius:8px;
+  border:1.5px solid var(--border);background:var(--card);
+  color:var(--white);font-family:'Outfit',sans-serif;font-size:.78rem;
+  text-align:center;
+}
+#timer-mins:focus{outline:none;border-color:var(--muted)}
+#timer-mins-label{font-size:.72rem;color:var(--muted)}
+
+/* ── COLLAPSIBLE SECTIONS ── */
+.collapsible-hdr{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between}
+.collapsible-hdr:hover{opacity:.85}
+.collapse-arrow{font-size:.85rem;color:var(--muted);transition:transform .25s;display:inline-block}
+.collapse-arrow.open{transform:rotate(0deg)}
+.collapse-arrow.closed{transform:rotate(-90deg)}
+.collapsible-body{overflow:hidden;transition:max-height .3s ease, opacity .2s ease}
+.collapsible-body.open{max-height:9999px;opacity:1}
+.collapsible-body.closed{max-height:0;opacity:0}
+.script-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;overflow:hidden}
+.script-hdr{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.script-hdr h3{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--yellow);flex:1}
+.script-hdr .sub-time{font-size:.75rem;color:var(--green-dim);font-weight:600;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);padding:3px 10px;border-radius:20px}
+.script-body{padding:16px 20px}
+.script-line{font-size:.9rem;line-height:1.9;color:var(--white)}
+.script-line .sname{font-weight:700}
+.script-line .spos{font-weight:700;padding:1px 7px;border-radius:8px;font-size:.8rem;margin:0 2px}
+.script-line .spos.STR{background:rgba(244,63,94,.25);color:#f87171}
+.script-line .spos.MID{background:rgba(249,115,22,.25);color:#fb923c}
+.script-line .spos.DEF{background:rgba(59,130,246,.25);color:#60a5fa}
+.script-line .spos.GK{background:rgba(168,85,247,.25);color:#c084fc}
+.script-line .rest-names{color:var(--muted)}
+.script-divider{border:none;border-top:1px solid var(--border);margin:12px 0}
+.halftime-banner{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:12px;padding:12px 18px;margin-bottom:16px;font-size:.82rem;color:var(--yellow);display:flex;align-items:center;gap:10px}
+.halftime-banner strong{font-family:'Barlow Condensed',sans-serif;font-size:1rem;letter-spacing:1px}
+.placeholder .ico{font-size:2.5rem;display:block;margin-bottom:10px}
+@media(max-width:640px){header h1{font-size:2rem}.gk-panel{grid-template-columns:1fr}.roster-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="timer-bar">
+  <div id="timer-bar-inner">
+    <div id="timer-display">
+      <span id="timer-rot-label">R1</span>
+      <span id="timer-time">6:30</span>
+    </div>
+    <div id="timer-controls">
+      <button id="timer-startstop" onclick="timerStartStop()">▶ Start</button>
+      <button id="timer-reset" onclick="timerReset()">↺ Reset</button>
+      <button id="timer-next" onclick="timerNext()" title="Next rotation">Next ›</button>
+      <input id="timer-mins" type="number" min="1" max="20" step="0.5" value="6.5" onchange="timerSetMins(this.value)" title="Edit duration (minutes)">
+      <span id="timer-mins-label">min</span>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+<header>
+  <h1>⚽ Match Day Planner</h1>
+  <p>U8 · 7v7 · 2-2-2 · Everyone plays all positions · Preferred position prioritised</p>
+</header>
+
+<div class="roster-panel">
+  <div class="roster-panel-header collapsible-hdr" onclick="toggleSection('sec-roster')" style="margin-bottom:0">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="section-label" style="margin:0">① Squad Availability — tap to mark unavailable</div>
+      <span class="collapse-arrow open" data-collapse="sec-roster">&#9662;</span>
+    </div>
+    <div class="avail-count" id="availCount"></div>
+  </div>
+  <div class="collapsible-body open" id="sec-roster" style="margin-top:14px">
+    <div class="roster-grid" id="rosterGrid"></div>
+  </div>
+</div>
+
+<div class="section-label collapsible-hdr" onclick="toggleSection('sec-formation')">② Formation &amp; Position Locks <span class="collapse-arrow open" data-collapse="sec-formation">▾</span></div>
+<div class="collapsible-body open" id="sec-formation">
+  <div class="formation-panel">
+    <div class="formation-choice" id="formationUI"></div>
+    <div class="lock-grid" id="lockGrid"></div>
+  </div>
+</div>
+
+<div class="section-label collapsible-hdr" onclick="toggleSection('sec-gk')">③ Select Goalkeepers <span class="collapse-arrow open" data-collapse="sec-gk">▾</span></div>
+<div class="collapsible-body open" id="sec-gk">
+<div class="gk-panel" style="margin-top:0">
+  <div class="gk-half h1"><div class="gk-half-label">🧤 1st Half GK</div><div class="gk-buttons" id="gkBtns1"></div></div>
+  <div class="gk-half h2"><div class="gk-half-label">🧤 2nd Half GK</div><div class="gk-buttons" id="gkBtns2"></div></div>
+</div>
+</div>
+
+<div id="output">
+  <div class="placeholder"><span class="ico">⚽</span><p>Mark availability, then select both goalkeepers to generate the rotation.</p></div>
+</div>
+</div>
+
+<script>
+let ALL_PLAYERS = [
+  {name:'Austin',   pref:'MID'},
+  {name:'Chloe',    pref:'STR'},
+  {name:'Dash',     pref:'MID'},
+  {name:'Fletcher', pref:'MID'},
+  {name:'Jadyn',    pref:'DEF'},
+  {name:'Jasper',   pref:'DEF'},
+  {name:'John',     pref:'STR'},
+  {name:'Lennox',   pref:'STR'},
+  {name:'Lucy',     pref:'DEF'},
+  {name:'Miles',    pref:'MID'},
+];
+const POS = ['STR','MID','DEF'];
+const FORMATION_SLOTS = {'2-2-2':{STR:2,MID:2,DEF:2}, '2-3-1':{STR:1,MID:3,DEF:2}};
+function slots() { return FORMATION_SLOTS[formation]; }
+const ICONS = {STR:'⚡',MID:'🔄',DEF:'🛡',GK:'🧤',REST:'💤'};
+const PC = {STR:'#f43f5e',MID:'#f97316',DEF:'#3b82f6',GK:'#a855f7'};
+// RT is now computed dynamically — see getGameConfig()
+
+// ── GAME CONFIG ───────────────────────────────
+function getGameConfig(n) {
+  if (n >= 10) {
+    return {
+      rotsPerHalf: 3, restPerRot: 3,
+      label: '3 rotations per half · 6:30 each · 3 rest per rotation',
+      times: buildRotTimes(3, [0,6.5,13,20,26.5,33,40]),
+    };
+  } else if (n === 9) {
+    return {
+      rotsPerHalf: 4, restPerRot: 2,
+      label: '4 rotations per half · 5:00 each · 2 rest per rotation',
+      times: buildRotTimes(4, [0,5,10,15,20,25,30,35,40]),
+    };
+  } else if (n === 8) {
+    return {
+      rotsPerHalf: 4, restPerRot: 1,
+      label: '4 rotations per half · 5:00 each · 1 rest per game',
+      times: buildRotTimes(4, [0,5,10,15,20,25,30,35,40]),
+    };
+  } else {
+    // 7 players: 1 GK + 6 outfield, no subs, no rest — everyone plays the full game
+    return {
+      rotsPerHalf: 1, restPerRot: 0,
+      label: 'No subs — 1 GK + 6 outfield play the full match',
+      times: buildRotTimes(1, [0,20,40]),
+    };
+  }
+}
+
+function buildRotTimes(rph, mins) {
+  const r = [];
+  for (let i=0; i<rph*2; i++) {
+    r.push([fmtMin(mins[i]), fmtMin(mins[i+1])]);
+  }
+  return r;
+}
+
+function fmtMin(m) {
+  const mins = Math.floor(m);
+  const secs = Math.round((m - mins) * 60);
+  return secs ? mins+':'+String(secs).padStart(2,'0') : mins+':00';
+}
+
+let unavail = new Set(), gk1=null, gk2=null, sched=null, selRot=0;
+let formation = '2-2-2'; // '2-2-2' or '2-3-1'
+let locked = {}; // {playerName: 'STR'|'MID'|'DEF'|null}
+// overrides: { 'PlayerName:rotIndex': 'REST'|'STR'|'MID'|'DEF' }
+let overrides = {};
+
+// ── PERSISTENCE ───────────────────────────────
+function savePrefs() {
+  const prefs = {};
+  ALL_PLAYERS.forEach(p => prefs[p.name] = p.pref);
+  try { localStorage.setItem('u8_prefs', JSON.stringify(prefs)); } catch(e) {}
+}
+
+function loadPrefs() {
+  try {
+    const saved = localStorage.getItem('u8_prefs');
+    if (!saved) return;
+    const prefs = JSON.parse(saved);
+    ALL_PLAYERS.forEach(p => { if (prefs[p.name] && ['STR','MID','DEF'].includes(prefs[p.name])) p.pref = prefs[p.name]; });
+  } catch(e) {}
+}
+
+function saveFormation() {
+  try { localStorage.setItem('u8_formation', formation); } catch(e) {}
+}
+function loadFormation() {
+  try {
+    const s = localStorage.getItem('u8_formation');
+    if (s === '2-2-2' || s === '2-3-1') formation = s;
+  } catch(e) {}
+}
+function saveLocks() {
+  try { localStorage.setItem('u8_locks', JSON.stringify(locked)); } catch(e) {}
+}
+function loadLocks() {
+  try {
+    const s = localStorage.getItem('u8_locks');
+    if (s) locked = JSON.parse(s);
+  } catch(e) {}
+}
+function saveOverrides() {
+  try { localStorage.setItem('u8_overrides', JSON.stringify(overrides)); } catch(e) {}
+}
+function loadOverrides() {
+  try {
+    const s = localStorage.getItem('u8_overrides');
+    if (s) overrides = JSON.parse(s);
+  } catch(e) {}
+}
+function saveNames() {
+  try { localStorage.setItem('u8_names', JSON.stringify(ALL_PLAYERS.map(p => p.name))); } catch(e) {}
+}
+
+function loadNames() {
+  try {
+    const saved = localStorage.getItem('u8_names');
+    if (!saved) return;
+    const names = JSON.parse(saved);
+    if (!Array.isArray(names) || names.length !== ALL_PLAYERS.length) return;
+    names.forEach((name, i) => {
+      if (typeof name === 'string' && name.trim()) ALL_PLAYERS[i].name = name.trim();
+    });
+  } catch(e) {}
+}
+
+// ── UI ────────────────────────────────────────
+function getAvail() { return ALL_PLAYERS.filter(p=>!unavail.has(p.name)); }
+
+function init() { loadNames(); loadPrefs(); loadFormation(); loadLocks(); loadOverrides(); buildFormationUI(); buildRoster(); buildGKPanels(); updateCount(); }
+
+function buildRoster() {
+  const g = document.getElementById('rosterGrid');
+  g.innerHTML = '';
+  ALL_PLAYERS.forEach(p => {
+    const d = document.createElement('div');
+    d.className = 'player-chip' +
+      (unavail.has(p.name) ? ' unavailable' : '') +
+      (p.name===gk1 ? ' gk1' : p.name===gk2 ? ' gk2' : '');
+    d.innerHTML = `<span class="chip-dot ${p.pref}"></span><span class="chip-name" contenteditable="true" spellcheck="false" title="Tap to rename">${p.name}</span><button class="pref-btn pref-${p.pref}" title="Tap to change preferred position" onclick="event.stopPropagation();cyclePref('${p.name}')">${p.pref}</button>`;
+    d.onclick = () => toggleAvail(p.name);
+    // Wire up name editing on the contenteditable span
+    const nameEl = d.querySelector('.chip-name');
+    nameEl.addEventListener('click', e => e.stopPropagation());
+    nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); nameEl.blur(); } });
+    nameEl.addEventListener('blur', () => {
+      const newName = nameEl.textContent.trim();
+      if (!newName || newName === p.name) { nameEl.textContent = p.name; return; }
+      renamePLayer(p.name, newName);
+    });
+    g.appendChild(d);
+  });
+}
+
+function buildFormationUI() {
+  // Formation buttons
+  const fEl = document.getElementById('formationUI');
+  if (!fEl) return;
+  fEl.innerHTML = ['2-2-2','2-3-1'].map(f => {
+    const sub = f === '2-2-2' ? '2 def · 2 mid · 2 str' : '2 def · 3 mid · 1 str';
+    return `<button class="formation-btn${formation===f?' active':''}" onclick="setFormation('${f}')">${f}<span class="f-sub">${sub}</span></button>`;
+  }).join('');
+
+  // Lock grid — one row per available player (excl GKs for clarity, but include all)
+  const lg = document.getElementById('lockGrid');
+  if (!lg) return;
+  lg.innerHTML = getAvail().map(p => {
+    const lock = locked[p.name];
+    return `<div class="lock-row">
+      <span class="lock-name">${p.name}</span>
+      <div class="lock-btns">
+        ${POS.map(pos => {
+          const isActive = lock === pos;
+          const canLock = canLockPos(pos);
+          return `<button class="lock-btn ${pos}${isActive?' active':''}"
+            onclick="toggleLock('${p.name}','${pos}')"
+            title="${isActive?'Click to unlock':'Lock to '+pos}"
+            ${!isActive && !canLock ? 'style="opacity:.3;cursor:not-allowed"' : ''}
+          >${pos}${isActive?' 🔒':''}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function canLockPos(pos) {
+  // Check we haven't exceeded max locks for this position in the current formation
+  const maxSlots = slots()[pos];
+  const currentLocks = getAvail().filter(p => locked[p.name] === pos).length;
+  return currentLocks < maxSlots;
+}
+
+function setFormation(f) {
+  formation = f;
+  saveFormation();
+  buildFormationUI();
+  tryGen();
+}
+
+function toggleLock(name, pos) {
+  if (locked[name] === pos) {
+    // Unlock
+    delete locked[name];
+  } else {
+    // Check slot limit (excluding current lock for this player)
+    const maxSlots = slots()[pos];
+    const currentLocks = getAvail().filter(p => locked[p.name] === pos && p.name !== name).length;
+    if (currentLocks >= maxSlots) return; // can't exceed slots
+    locked[name] = pos;
+  }
+  saveLocks();
+  buildFormationUI();
+  tryGen();
+}
+
+function cyclePref(name) {
+  const cycle = {STR:'MID', MID:'DEF', DEF:'STR'};
+  const p = ALL_PLAYERS.find(p => p.name === name);
+  if (p) {
+    p.pref = cycle[p.pref];
+    savePrefs();
+    buildRoster();
+    tryGen();
+  }
+}
+
+function renamePLayer(oldName, newName) {
+  // Guard: no duplicates
+  if (ALL_PLAYERS.some(p => p.name === newName)) return;
+  const p = ALL_PLAYERS.find(p => p.name === oldName);
+  if (!p) return;
+  // Update GK selections if this player was selected
+  if (gk1 === oldName) gk1 = newName;
+  if (gk2 === oldName) gk2 = newName;
+  // Update unavail set
+  if (unavail.has(oldName)) { unavail.delete(oldName); unavail.add(newName); }
+  p.name = newName;
+  saveNames();
+  savePrefs(); // prefs are by name, resave with new key
+  buildRoster();
+  buildGKPanels();
+  tryGen();
+}
+
+function toggleAvail(name) {
+  unavail.has(name) ? unavail.delete(name) : unavail.add(name);
+  if (unavail.has(name)) { if(gk1===name)gk1=null; if(gk2===name)gk2=null; }
+  updateCount(); buildRoster(); buildGKPanels(); syncTimerToSquad(); tryGen();
+}
+
+function updateCount() {
+  const n = getAvail().length;
+  document.getElementById('availCount').innerHTML = `<strong>${n}</strong> of ${ALL_PLAYERS.length} available`;
+}
+
+function buildGKPanels() {
+  [1,2].forEach(h => {
+    const el = document.getElementById('gkBtns'+h);
+    el.innerHTML = '';
+    getAvail().forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'gk-btn' + (h===1&&gk1===p.name?' sel-h1':h===2&&gk2===p.name?' sel-h2':'');
+      b.textContent = p.name;
+      b.disabled = (h===1&&gk2===p.name)||(h===2&&gk1===p.name);
+      b.onclick = () => selGK(p.name, h);
+      el.appendChild(b);
+    });
+  });
+}
+
+function selGK(name, h) {
+  if(h===1) gk1=(gk1===name)?null:name;
+  else      gk2=(gk2===name)?null:name;
+  if(gk1&&gk2&&gk1===gk2){ h===1?gk2=null:gk1=null; }
+  buildGKPanels(); buildRoster(); tryGen();
+}
+
+// ── OVERRIDES ────────────────────────────────
+// applyOverrides: after schedule is generated, force any manual overrides.
+// For each override key 'Name:rotIndex', move that player to the requested
+// position (or REST), swapping them with whoever currently holds that spot.
+function applyOverrides(half1, half2, players, gkP1, gkP2, cfg) {
+  const allRots = [...half1, ...half2];
+  const gkNames = new Set([gkP1.name, gkP2.name]);
+
+  Object.entries(overrides).forEach(([key, targetPos]) => {
+    const [name, riStr] = key.split(':');
+    const ri = parseInt(riStr);
+    const rot = allRots[ri];
+    if (!rot) return;
+
+    // Can't override a GK rotation
+    const gkThisHalf = ri < cfg.rotsPerHalf ? gkP1 : gkP2;
+    if (name === gkThisHalf.name) return;
+
+    const player = players.find(p => p.name === name);
+    if (!player) return;
+
+    // Find where the player currently is in this rotation
+    let currentPos = null;
+    if ((rot.REST || []).find(p => p.name === name)) currentPos = 'REST';
+    POS.forEach(pos => { if ((rot[pos] || []).find(p => p.name === name)) currentPos = pos; });
+    if (currentPos === null) return; // player not in this rotation at all (different half GK)
+    if (currentPos === targetPos) return; // already there
+
+    if (targetPos === 'REST') {
+      // Move player to REST, pull someone from REST to their old position
+      const restIdx = (rot.REST || []).findIndex(p => p.name === name);
+      const posArr  = rot[currentPos];
+      const posIdx  = posArr ? posArr.findIndex(p => p.name === name) : -1;
+
+      if (posIdx >= 0 && rot.REST && rot.REST.length > 0) {
+        // Swap player with first resting player
+        const swapTarget = rot.REST[0];
+        posArr[posIdx] = swapTarget;
+        rot.REST[0] = player;
+      } else if (posIdx >= 0) {
+        // No one resting to swap with — just bench the player (7-player mode etc)
+        posArr.splice(posIdx, 1);
+        if (!rot.REST) rot.REST = [];
+        rot.REST.push(player);
+      }
+    } else {
+      // Move player to targetPos
+      const slotMax = slots()[targetPos];
+      const targetArr = rot[targetPos] || [];
+      const sourceArr = currentPos === 'REST' ? rot.REST : rot[currentPos];
+      const sourceIdx = sourceArr ? sourceArr.findIndex(p => p.name === name) : -1;
+      if (sourceIdx < 0) return;
+
+      if (targetArr.length < slotMax) {
+        // Slot has space — just move
+        sourceArr.splice(sourceIdx, 1);
+        targetArr.push(player);
+        rot[targetPos] = targetArr;
+      } else {
+        // Swap with first occupant of target slot
+        const swapTarget = targetArr[0];
+        sourceArr[sourceIdx] = swapTarget;
+        targetArr[0] = player;
+      }
+    }
+  });
+}
+
+// ── OVERRIDE UI HELPERS ───────────────────────────────────────────────────
+function setOverride(name, ri, pos) {
+  const key = name + ':' + ri;
+  if (overrides[key] === pos) {
+    delete overrides[key]; // toggle off
+  } else {
+    overrides[key] = pos;
+  }
+  saveOverrides();
+  tryGen();
+}
+
+function clearAllOverrides() {
+  overrides = {};
+  saveOverrides();
+  tryGen();
+}
+
+// ── SOLVER ────────────────────────────────────
+function tryGen() {
+  syncTimerToSquad();
+  const out = document.getElementById('output');
+  if (!gk1||!gk2) {
+    out.innerHTML = '<div class="placeholder"><span class="ico">👆</span><p>Select both goalkeepers to generate the schedule.</p></div>';
+    sched=null; return;
+  }
+  const av = getAvail();
+  if (av.length < 7) {
+    out.innerHTML = '<div class="placeholder"><span class="ico">⚠️</span><p>Need at least 7 available players (1 GK + 6 outfield) for a 7v7 game.</p></div>';
+    sched=null; return;
+  }
+  sched = buildSchedule(av, gk1, gk2);
+  selRot = 0;
+  render();
+}
+
+// ── SOLVER ────────────────────────────────────
+function buildSchedule(players, gk1name, gk2name) {
+  const gkP1 = players.find(p=>p.name===gk1name);
+  const gkP2 = players.find(p=>p.name===gk2name);
+  const cfg = getGameConfig(players.length);
+
+  // played tracks position counts across BOTH halves
+  const played = {};
+  players.forEach(p => { played[p.name] = {STR:0, MID:0, DEF:0}; });
+
+  // For 8-player squads, pre-plan who rests in which half so every outfield
+  // player gets exactly one rest rotation across the whole game.
+  const {h1RestNames, h2RestNames} = planRests(players, gk1name, gk2name, cfg);
+
+  const half1 = buildHalf(players.filter(p=>p.name!==gk1name), cfg, played, h1RestNames, null);
+  // Extract H1 rest groups for continuity checking in H2
+  const h1RestGroups = half1.map(rot => rot.REST);
+  const half2 = buildHalf(players.filter(p=>p.name!==gk2name), cfg, played, h2RestNames, h1RestGroups);
+
+  applyOverrides(half1, half2, players, gkP1, gkP2, cfg);
+  return { gkP1, gkP2, half1, half2, players, cfg };
+}
+
+// planRests: decide which players rest in H1 vs H2 (only meaningful for 8-player squads).
+// For 10/9 players the standard interleave handles this automatically.
+// For 8 players: 4 rotations per half, 1 rest per rotation.
+//   H1 pool = 7 outfield. 4 of them rest once in H1. 3 don't rest in H1.
+//   H2 pool = 7 outfield (different GK). 4 of them rest once in H2.
+//   Constraint: every player rests exactly once total.
+//   GK1 is GK all H1, so their "rest" is naturally H2 → they must rest in H2.
+//   GK2 is outfield H1 and GK all H2 → they rest in H1.
+//   Remaining 6 non-GK players: 3 rest in H1, 3 rest in H2.
+function planRests(players, gk1name, gk2name, cfg) {
+  if (cfg.restPerRot === 0) {
+    // 7-player squad: no rests at all
+    return { h1RestNames: new Set(), h2RestNames: new Set() };
+  }
+  if (cfg.restPerRot >= 2) {
+    // Standard squads (9-10): rest groups built per-half by interleave, no pre-planning needed
+    return { h1RestNames: null, h2RestNames: null };
+  }
+
+  // 8-player squad: restPerRot === 1
+  const nonGK = players.filter(p => p.name !== gk1name && p.name !== gk2name);
+  // nonGK.length === 6
+
+  // Interleave nonGK by pref to spread position types
+  const byPref = {STR:[], MID:[], DEF:[]};
+  nonGK.forEach(p => byPref[p.pref].push(p));
+  const sorted = [];
+  const maxLen = Math.max(byPref.STR.length, byPref.MID.length, byPref.DEF.length);
+  for (let i=0; i<maxLen; i++) {
+    POS.forEach(pos => { if(byPref[pos][i]) sorted.push(byPref[pos][i]); });
+  }
+
+  // First 3 rest in H1, last 3 rest in H2
+  const restH1nonGK = sorted.slice(0, 3).map(p => p.name);
+  const restH2nonGK = sorted.slice(3, 6).map(p => p.name);
+
+  // GK2 rests in H1 (outfield in H1, GK in H2)
+  // GK1 rests in H2 (GK in H1, outfield in H2)
+  const h1RestNames = new Set([gk2name, ...restH1nonGK]);
+  const h2RestNames = new Set([gk1name, ...restH2nonGK]);
+
+  return { h1RestNames, h2RestNames };
+}
+
+// buildHalf: produce rotsPerHalf rotations, each with 6 active and restPerRot resting.
+// h1RestGroups: the rest groups from H1, used by H2 to check halftime continuity rules.
+function buildHalf(pool, cfg, played, presetRestNames, h1RestGroups) {
+  const rotsPerHalf = cfg.rotsPerHalf;
+  // If this is H2, extract names of who rested first/last in H1 for rule checking
+  const h1LastRestNames  = h1RestGroups ? new Set(h1RestGroups[rotsPerHalf-1].map(p=>p.name)) : null;
+  const h1FirstRestNames = h1RestGroups ? new Set(h1RestGroups[0].map(p=>p.name)) : null;
+
+  const restGroups = buildRestGroups(pool, cfg, presetRestNames, h1LastRestNames, h1FirstRestNames);
+
+  return restGroups.map((resting) => {
+    const active = pool.filter(p => !resting.includes(p));
+    const rot = assignPositions(active, played);
+    POS.forEach(pos => rot[pos].forEach(p => played[p.name][pos]++));
+    return { ...rot, REST: resting };
+  });
+}
+
+// buildRestGroups: form one rest group per rotation.
+// presetRestNames: Set of player names who rest this half (8-player mode).
+//   null means use standard interleave (10/9 player mode).
+// h1LastRestNames: names of players who rested in the LAST H1 rotation (for H2 rule checking).
+// h1FirstRestNames: names of players who rested in the FIRST H1 rotation (for H2 rule checking).
+function buildRestGroups(pool, cfg, presetRestNames, h1LastRestNames, h1FirstRestNames) {
+  const {rotsPerHalf, restPerRot} = cfg;
+
+  // 7 players: no rests at all — one rotation per half, all 6 outfield play
+  if (restPerRot === 0) {
+    return [[]]; // single rotation, nobody resting
+  }
+
+  // Standard interleave (10 or 9 players)
+  if (!presetRestNames) {
+    const byPref = {STR:[], MID:[], DEF:[]};
+    pool.forEach(p => byPref[p.pref].push(p));
+    const sorted = [];
+    const maxLen = Math.max(byPref.STR.length, byPref.MID.length, byPref.DEF.length);
+    for (let i=0; i<maxLen; i++) {
+      POS.forEach(pos => { if(byPref[pos][i]) sorted.push(byPref[pos][i]); });
+    }
+    const groups = Array.from({length: rotsPerHalf}, () => []);
+    sorted.forEach((p, i) => groups[i % rotsPerHalf].push(p));
+
+    // Fix rule violations if this is H2 (h1LastRestNames provided)
+    if (h1LastRestNames) fixRestViolations(groups, h1LastRestNames, h1FirstRestNames, rotsPerHalf);
+
+    return groups;
+  }
+
+  // 8-player mode: exactly 1 player rests per rotation.
+  if (presetRestNames.size === 0) return [[]]; // no rests
+  const toRest = pool.filter(p => presetRestNames.has(p.name));
+  const prefOrder = {STR:0, MID:1, DEF:2};
+  toRest.sort((a,b) => prefOrder[a.pref] - prefOrder[b.pref]);
+  const groups = Array.from({length: rotsPerHalf}, (_, i) => toRest[i] ? [toRest[i]] : []);
+
+  // Fix violations for 8-player H2 too
+  if (h1LastRestNames) fixRestViolations(groups, h1LastRestNames, h1FirstRestNames, rotsPerHalf);
+
+  return groups;
+}
+
+// fixRestViolations: post-process H2 rest groups to satisfy:
+//   Rule 1: no player rests in both h1[last] AND h2[0] (back-to-back at halftime)
+//   Rule 2: no player rests in both h1[0] AND h2[last] (started off, ends off last)
+// Fixes by swapping the offending player with the most-suitable player in another group.
+function fixRestViolations(groups, h1LastRestNames, h1FirstRestNames, rotsPerHalf) {
+  const last = rotsPerHalf - 1;
+
+  // Rule 1: players in groups[0] who also rested last in H1 → move them to a later group
+  for (let i = groups[0].length - 1; i >= 0; i--) {
+    const p = groups[0][i];
+    if (h1LastRestNames && h1LastRestNames.has(p.name)) {
+      // Find a swap candidate: someone in groups[1..last] who did NOT rest last in H1
+      // and is not causing their own violation if moved to groups[0]
+      let swapped = false;
+      for (let k = 1; k <= last; k++) {
+        for (let j = 0; j < groups[k].length; j++) {
+          const candidate = groups[k][j];
+          // Don't swap if candidate rested first in H1 and we'd put them in groups[last]
+          if (k === last && h1FirstRestNames && h1FirstRestNames.has(candidate.name)) continue;
+          // Swap
+          groups[0][i] = candidate;
+          groups[k][j] = p;
+          swapped = true;
+          break;
+        }
+        if (swapped) break;
+      }
+    }
+  }
+
+  // Rule 2: players in groups[last] who also rested first in H1 → move them to an earlier group
+  for (let i = groups[last].length - 1; i >= 0; i--) {
+    const p = groups[last][i];
+    if (h1FirstRestNames && h1FirstRestNames.has(p.name)) {
+      // Find a swap candidate in groups[0..last-1] who won't create a Rule 1 violation
+      let swapped = false;
+      for (let k = 0; k < last; k++) {
+        for (let j = 0; j < groups[k].length; j++) {
+          const candidate = groups[k][j];
+          // Don't create a Rule 1 violation: candidate shouldn't be in h1LastRestNames if k===0
+          if (k === 0 && h1LastRestNames && h1LastRestNames.has(candidate.name)) continue;
+          groups[last][i] = candidate;
+          groups[k][j] = p;
+          swapped = true;
+          break;
+        }
+        if (swapped) break;
+      }
+    }
+  }
+}
+
+// assignPositions: assign active players to formation slots (STR/MID/DEF).
+// Respects: formation slot counts, position locks, preference history.
+//
+// Pass order:
+//   1. Locked players — always get their locked position (if slot available)
+//   2. Preferred pass — players who haven't played their pref yet this game
+//   3. Fill pass — remaining players go to least-played open slot
+function assignPositions(active, played) {
+  const slotCounts = slots(); // e.g. {STR:2, MID:2, DEF:2} or {STR:1, MID:3, DEF:2}
+  const result = {STR:[], MID:[], DEF:[]};
+  const unassigned = [];
+
+  // Pass 1: locked players
+  const lockPass = active.filter(p => locked[p.name]);
+  const remaining1 = active.filter(p => !locked[p.name]);
+
+  for (const p of lockPass) {
+    const pos = locked[p.name];
+    if (result[pos].length < slotCounts[pos]) {
+      result[pos].push(p);
+    } else {
+      // Lock can't be satisfied (slot full) — treat as unlocked
+      unassigned.push(p);
+    }
+  }
+
+  // Pass 2: prefer players who haven't played their pref yet
+  const prefPass = remaining1
+    .filter(p => played[p.name][p.pref] === 0)
+    .sort((a,b) => {
+      const tA = POS.reduce((s,pos)=>s+played[a.name][pos],0);
+      const tB = POS.reduce((s,pos)=>s+played[b.name][pos],0);
+      return tA - tB;
+    });
+
+  for (const p of prefPass) {
+    if (result[p.pref].length < slotCounts[p.pref]) result[p.pref].push(p);
+    else unassigned.push(p);
+  }
+
+  // Everyone else to fill pass
+  const inPasses = new Set([...lockPass, ...prefPass].map(p=>p.name));
+  for (const p of remaining1) {
+    if (!inPasses.has(p.name)) unassigned.push(p);
+  }
+
+  // Pass 3: fill remaining slots, prioritising players with most positional gaps
+  unassigned.sort((a,b) => {
+    const dA = POS.filter(pos=>played[a.name][pos]===0).length;
+    const dB = POS.filter(pos=>played[b.name][pos]===0).length;
+    return dB - dA;
+  });
+
+  for (const p of unassigned) {
+    const open = POS.filter(pos => result[pos].length < slotCounts[pos]);
+    if (!open.length) break; // shouldn't happen
+    open.sort((a,b) => played[p.name][a] - played[p.name][b]);
+    result[open[0]].push(p);
+  }
+
+  return result;
+}
+
+// ── RENDER ────────────────────────────────────
+function render() {
+  if (!sched) return;
+  const {gkP1, gkP2, half1, half2, players, cfg} = sched;
+  const allRots = [...half1, ...half2];
+  const RT = cfg.times;
+
+  // Build coverage map
+  const cov = {};
+  players.forEach(p => cov[p.name] = []);
+  [[half1,gkP1],[half2,gkP2]].forEach(([rots,gkP]) => {
+    rots.forEach(rot => POS.forEach(pos => (rot[pos]||[]).forEach(p => cov[p.name].push(pos))));
+    // Push GK marker for each rotation in this half
+    rots.forEach(() => cov[gkP.name].push('GK'));
+  });
+
+  const nonGK = players.filter(p=>p.name!==gkP1.name&&p.name!==gkP2.name);
+  const allHaveAll = nonGK.every(p => POS.every(pos => cov[p.name].includes(pos)));
+  const allPrefDouble = nonGK.every(p => cov[p.name].filter(x=>x===p.pref).length >= 2);
+
+  const icon = allHaveAll && allPrefDouble ? '🌟' : allHaveAll ? '✅' : '⚽';
+  const msg = allHaveAll && allPrefDouble
+    ? 'Every player covers all 3 positions — preferred position played twice ★'
+    : allHaveAll
+    ? 'Every player covers all 3 positions. Preferred position played as often as possible.'
+    : 'All positions covered as evenly as possible for this squad size.';
+
+  // Sub whistle times
+  const subTimes = RT.slice(1).map(t=>t[0]).join(' · ');
+
+  const timelineHtml = allRots.map((rot,i) => `
+    <div class="rot-chip${i===selRot?' active':''}" onclick="setRot(${i})">
+      <span class="rnum">R${i+1}</span>
+      <span class="rtime">${RT[i][0]}–${RT[i][1]}</span>
+    </div>`).join('');
+
+  let html = `
+  <div class="score-bar">
+    <div class="score-icon">${icon}</div>
+    <div class="score-desc">
+      <strong>${msg}</strong>
+      ${cfg.label} · Formation: ${formation} · GK: ${gkP1.name} (H1) &amp; ${gkP2.name} (H2)
+    </div>
+    <div class="gk-note-tag">🧤 ${gkP1.name} H1 · ${gkP2.name} H2</div>
+  </div>
+
+  <div class="section-label collapsible-hdr" onclick="toggleSection('sec-pitch')">④ Pitch View — tap a rotation <span class="collapse-arrow" data-collapse="sec-pitch">▾</span></div>
+  <div class="collapsible-body" id="sec-pitch">
+  <div class="timeline-wrap"><div class="timeline">${timelineHtml}</div></div>
+  ${pitchHTML(allRots[selRot], selRot, gkP1, gkP2, RT)}
+  </div>
+
+  <div class="section-label collapsible-hdr" style="margin-top:20px;display:flex;align-items:center;justify-content:space-between" onclick="toggleSection('sec-schedule')">
+    <span>⑤ Full Schedule <span class="collapse-arrow" data-collapse="sec-schedule">▾</span></span>
+    <span onclick="event.stopPropagation();clearAllOverrides()" class="ov-clear-all" title="Remove all manual overrides">Clear overrides ✕</span>
+  </div>
+  <div class="collapsible-body" id="sec-schedule">
+  ${halfTableHTML(half1, gkP1, 1, players, RT, 0)}
+  ${halfTableHTML(half2, gkP2, 2, players, RT, cfg.rotsPerHalf)}
+  </div>
+
+  <div class="coverage-panel">
+    <h3 class="collapsible-hdr" onclick="toggleSection('sec-coverage')" style="margin-bottom:0;padding-bottom:14px">Full Match Position Coverage <span class="collapse-arrow" data-collapse="sec-coverage" style="font-size:.75rem">▾</span></h3>
+    <div class="collapsible-body" id="sec-coverage">
+    <div class="cov-grid">
+      ${players.map(p => {
+        const counts = {};
+        cov[p.name].forEach(pos => counts[pos]=(counts[pos]||0)+1);
+        const isGK = p.name===gkP1.name||p.name===gkP2.name;
+        const hasAll = !isGK && POS.every(pos => cov[p.name].includes(pos));
+        const prefDouble = !isGK && (counts[p.pref]||0) >= 2;
+        const statusText = isGK ? '🧤 GK half + outfield half'
+          : (hasAll && prefDouble) ? '✅ All positions + preferred ×2'
+          : hasAll ? '✅ All positions covered'
+          : '⚽ Partial coverage';
+        const cls = isGK ? 'warn' : (hasAll && prefDouble) ? 'ok' : hasAll ? 'good' : 'warn';
+        const pills = Object.entries(counts).map(([pos,cnt]) => {
+          const ip = pos===p.pref;
+          return `<span class="pill ${pos}${ip?' pref':''}">${ICONS[pos]||''} ${pos}${cnt>1?'×'+cnt:''}</span>`;
+        }).join('');
+        const lockLabel = locked[p.name] ? ` 🔒${locked[p.name]}` : '';
+        return `<div class="cov-card">
+          <div class="cov-name">${p.name} <span class="cov-pref">pref:${p.pref}${lockLabel}</span></div>
+          <div class="cov-pills">${pills}</div>
+          <div class="cov-check ${cls}">${statusText}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <p style="margin-top:10px;font-size:.72rem;color:var(--muted);font-style:italic">
+      ★ marks preferred position appearances. Every player gets Striker, Mid and Defender time across the match.
+    </p>
+    </div>
+  </div>
+
+  ${coachScriptHTML(allRots, gkP1, gkP2, RT, cfg)}
+
+  </div>
+
+  <div class="notes">
+    <strong>📋 COACH NOTES</strong>
+    <ul>
+      <li>Sub whistle at: ${subTimes} · (halftime at ${RT[cfg.rotsPerHalf][0]})</li>
+      <li>${cfg.label}</li>
+      <li>Every player gets Striker, Mid AND Defender time across the match</li>
+      <li>Preferred positions are prioritised — most players will play theirs twice (★)</li>
+      <li>Tap rotation chips to see the pitch layout for each sub window</li>
+    </ul>
+  </div>`;
+
+  document.getElementById('output').innerHTML = html;
+  buildFormationUI();
+  initCollapsibles();
+}
+
+function setRot(i) {
+  selRot = i;
+  render();
+  setTimeout(()=>document.querySelector('.pitch-container')?.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+// ── PITCH SVG ─────────────────────────────────
+function pitchHTML(rot, ri, gkP1, gkP2, RT) {
+  const isH2 = ri >= 3;
+  const gkName = isH2 ? gkP2.name : gkP1.name;
+  const W=380, H=560, cx=W/2;
+
+  // Coords vary by formation
+  const is231 = formation === '2-3-1';
+  const coords = {
+    GK:  [{x:cx, y:H-55}],
+    DEF: [{x:cx-88, y:H-165}, {x:cx+88, y:H-165}],
+    MID: is231
+      ? [{x:cx-110, y:H/2}, {x:cx, y:H/2}, {x:cx+110, y:H/2}]
+      : [{x:cx-88,  y:H/2}, {x:cx+88, y:H/2}],
+    STR: is231
+      ? [{x:cx, y:165}]
+      : [{x:cx-88, y:165}, {x:cx+88, y:165}],
+  };
+
+  const placements = [{name:gkName, pos:'GK', ...coords.GK[0], isPref:false}];
+  POS.forEach(pos => (rot[pos]||[]).forEach((p,i) => {
+    const c = coords[pos][i] || coords[pos][0];
+    placements.push({name:p.name, pos, x:c.x, y:c.y, isPref:p.pref===pos});
+  }));
+
+  const stripes = Array.from({length:10},(_,i)=>
+    `<rect x="${i*38}" y="0" width="38" height="${H}" fill="${i%2?'#348a42':'#2d7a3a'}"/>`).join('');
+
+  const tokens = placements.map(pl => {
+    const c = PC[pl.pos];
+    return `<g>
+      <circle cx="${pl.x}" cy="${pl.y}" r="24" fill="${c}" opacity=".92"/>
+      <circle cx="${pl.x}" cy="${pl.y}" r="24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2"/>
+      <text x="${pl.x}" y="${pl.y-6}" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Outfit,sans-serif">${pl.name.slice(0,2).toUpperCase()}</text>
+      <text x="${pl.x}" y="${pl.y+7}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.85)" font-family="Outfit,sans-serif">${pl.name.slice(2)}</text>
+      ${pl.isPref?`<text x="${pl.x}" y="${pl.y+30}" text-anchor="middle" font-size="10" fill="${c}">★</text>`:''}
+      <text x="${pl.x}" y="${pl.y+42}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${c}" font-family="Barlow Condensed,sans-serif" letter-spacing="1">${pl.pos}</text>
+    </g>`;
+  }).join('');
+
+  const rest = rot.REST||[];
+  const benchH = rest.length > 0 ? 68 : 0;
+  const bench = rest.map((p,i) => {
+    const bx = 36 + i*72;
+    return `<g opacity=".5">
+      <circle cx="${bx}" cy="${H+32}" r="18" fill="#1a2a1c" stroke="#3d5c42" stroke-width="1.5" stroke-dasharray="4 2"/>
+      <text x="${bx}" y="${H+27}" text-anchor="middle" font-size="8" font-weight="600" fill="#6b9475" font-family="Outfit,sans-serif">${p.name.slice(0,6)}</text>
+      <text x="${bx}" y="${H+38}" text-anchor="middle" font-size="7.5" fill="#4a6350" font-family="Barlow Condensed,sans-serif">REST</text>
+    </g>`;
+  }).join('');
+
+  return `<div class="pitch-container">
+    <div class="pitch-header">
+      <h3>Rotation ${ri+1} · ${RT[ri][0]}–${RT[ri][1]} · ${isH2?'2nd':'1st'} Half · ${formation}</h3>
+      <div class="pitch-legend">
+        ${POS.map(p=>`<div class="legend-item"><span class="legend-dot" style="background:${PC[p]}"></span>${p}</div>`).join('')}
+        <div class="legend-item"><span class="legend-dot" style="background:${PC.GK}"></span>GK</div>
+      </div>
+    </div>
+    <div class="pitch-svg-wrap">
+      <svg viewBox="0 0 ${W} ${H+benchH}" xmlns="http://www.w3.org/2000/svg" style="max-width:420px;width:100%">
+        <defs><clipPath id="pc"><rect width="${W}" height="${H}" rx="8"/></clipPath></defs>
+        <g clip-path="url(#pc)">${stripes}</g>
+        <rect x="12" y="12" width="${W-24}" height="${H-24}" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2" rx="4"/>
+        <line x1="12" y1="${H/2}" x2="${W-12}" y2="${H/2}" stroke="rgba(255,255,255,.65)" stroke-width="1.5"/>
+        <circle cx="${cx}" cy="${H/2}" r="42" fill="none" stroke="rgba(255,255,255,.65)" stroke-width="1.5"/>
+        <circle cx="${cx}" cy="${H/2}" r="3" fill="rgba(255,255,255,.65)"/>
+        <rect x="${cx-30}" y="12" width="60" height="24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/>
+        <rect x="${cx-75}" y="12" width="150" height="52" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+        <rect x="${cx-30}" y="${H-36}" width="60" height="24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/>
+        <rect x="${cx-75}" y="${H-64}" width="150" height="52" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+        <text x="${W-14}" y="${H/2-8}" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.3)">▲</text>
+        <text x="${W-14}" y="${H/2+16}" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.25)" font-family="Outfit,sans-serif">ATK</text>
+        ${tokens}
+        ${benchH>0?`
+          <rect x="0" y="${H}" width="${W}" height="${benchH}" fill="#0d1a0f"/>
+          <line x1="0" y1="${H}" x2="${W}" y2="${H}" stroke="#243828" stroke-width="1"/>
+          <text x="10" y="${H+18}" font-size="8" font-weight="700" fill="#3d5c42" font-family="Barlow Condensed,sans-serif" letter-spacing="2">BENCH</text>
+          ${bench}`:''}
+      </svg>
+    </div>
+  </div>`;
+}
+
+// ── SCHEDULE TABLE ────────────────────────────
+function halfTableHTML(rots, gkP, hn, players, RT, offset) {
+  const inHalf = new Set([gkP.name]);
+  rots.forEach(rot => ['STR','MID','DEF','REST'].forEach(pos => (rot[pos]||[]).forEach(p => inHalf.add(p.name))));
+  const list = players.filter(p => inHalf.has(p.name));
+
+  const hdrs = rots.map((_,i) =>
+    `<th class="rth">R${offset+i+1}<span class="ts">${RT[offset+i][0]}–${RT[offset+i][1]}</span></th>`
+  ).join('');
+
+  const rows = list.map(p => {
+    const cells = rots.map((rot, ri) => {
+      if (p.name===gkP.name) return `<td class="pc"><span class="pill GK">🧤 GK</span></td>`;
+      let pos=null, ip=false;
+      const globalRi = offset + ri;
+      POS.forEach(ps => { if((rot[ps]||[]).find(x=>x.name===p.name)){pos=ps;ip=p.pref===ps;} });
+      if ((rot.REST||[]).find(x=>x.name===p.name)) pos='REST';
+      const ovKey = p.name+':'+globalRi;
+      const hasOv = overrides[ovKey] !== undefined;
+      const pillHtml = `<span class="pill ${pos}${ip?' pref':''}${hasOv?' overridden':''}">${pos==='REST'?'💤 Rest':ICONS[pos]+' '+pos}</span>`;
+      // Override buttons: REST + each position slot
+      const ovBtns = ['REST',...POS].map(op => {
+        const isActive = overrides[ovKey] === op;
+        const label = op==='REST' ? '💤' : ICONS[op];
+        return `<button class="ov-btn${isActive?' ov-active':''}" onclick="setOverride('${p.name}',${globalRi},'${op}')" title="${op==='REST'?'Bench':'Play '+op}">${label}</button>`;
+      }).join('');
+      return `<td class="pc">
+        <div class="ov-cell">
+          ${pillHtml}
+          <div class="ov-btns">${ovBtns}${hasOv?`<button class="ov-btn ov-clear" onclick="setOverride('${p.name}',${globalRi},'${overrides[ovKey]}')" title="Clear override">✕</button>`:''}</div>
+        </div>
+      </td>`;
+    }).join('');
+    return `<tr><td><div class="pnc"><div class="av">${p.name[0]}</div><span style="font-size:.85rem;font-weight:600">${p.name}</span></div></td>${cells}</tr>`;
+  }).join('');
+
+  // Compute half time label from RT times
+  const halfStart = RT[offset][0];
+  const halfEnd   = RT[offset + rots.length - 1][1];
+  return `<div class="half-block">
+    <div class="half-hdr">
+      <h2 class="h${hn}">${hn===1?'1st':'2nd'} Half · ${halfStart}–${halfEnd}</h2>
+      <span class="gk-tag-small">🧤 ${gkP.name}</span>
+    </div>
+    <table class="sched">
+      <thead><tr><th style="width:120px">Player</th>${hdrs}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+// ── COACH SCRIPT ─────────────────────────────
+// Generates verbal instructions for each sub whistle.
+// At each rotation boundary we tell: who comes ON (and to what position),
+// who comes OFF (rest), and who STAYS but changes position.
+function coachScriptHTML(allRots, gkP1, gkP2, RT, cfg) {
+  const rotsPerHalf = cfg.rotsPerHalf;
+  let html = '<div class="section-label" style="margin-top:20px">⑤ Coach Scripts — what to say at each whistle</div>';
+
+  allRots.forEach((rot, ri) => {
+    const isFirstRot = ri === 0;
+    const isHalftime = ri === rotsPerHalf;
+    const isFirstH2  = ri === rotsPerHalf;
+    const prevRot    = ri > 0 ? allRots[ri - 1] : null;
+    const gkName     = ri < rotsPerHalf ? gkP1.name : gkP2.name;
+    const prevGKName = (prevRot && ri - 1 < rotsPerHalf) ? gkP1.name :
+                       (prevRot ? gkP2.name : null);
+
+    // At halftime, insert a banner
+    if (isHalftime) {
+      html += `<div class="halftime-banner">
+        <span>⚽</span>
+        <div><strong>HALFTIME</strong> — ${gkP2.name} goes in goals. ${gkP1.name} joins the outfield.</div>
+      </div>`;
+    }
+
+    // Skip the very first rotation (no sub needed — just starting positions)
+    if (isFirstRot) {
+      // Show kick-off lineup instead
+      html += kickoffHTML(rot, gkName, RT[0]);
+      return;
+    }
+
+    // Work out what changed between prevRot and rot
+    const prevOnField = {}; // name → pos (for players on field last rotation)
+    if (prevRot) {
+      POS.forEach(pos => (prevRot[pos]||[]).forEach(p => prevOnField[p.name] = pos));
+      prevOnField[prevGKName] = 'GK';
+    }
+    const nowOnField = {}; // name → pos (for players on field this rotation)
+    POS.forEach(pos => (rot[pos]||[]).forEach(p => nowOnField[p.name] = pos));
+    nowOnField[gkName] = 'GK';
+
+    const prevResting = (prevRot.REST||[]).map(p=>p.name);
+    const nowResting  = (rot.REST||[]).map(p=>p.name);
+
+    // Coming ON: were resting (or GK switching to outfield at halftime), now on field
+    const comingOn = Object.entries(nowOnField).filter(([name]) =>
+      prevResting.includes(name) || (isHalftime && name === gkP1.name)
+    );
+
+    // Going OFF: were on field, now resting (or GK switching — handled by halftime banner)
+    const goingOff = prevResting.length > 0
+      ? Object.keys(prevOnField).filter(name => nowResting.includes(name))
+      : [];
+
+    // Staying on but changing position
+    const changing = Object.entries(nowOnField).filter(([name, pos]) =>
+      prevOnField[name] && prevOnField[name] !== pos &&
+      !prevResting.includes(name) &&
+      !(isHalftime && name === gkP1.name)
+    );
+
+    const timeLabel = isHalftime
+      ? `Halftime — ${RT[ri][0]}`
+      : `${RT[ri][0]} whistle (Rotation ${ri + 1})`;
+
+    let body = '';
+
+    // Coming on
+    if (comingOn.length > 0) {
+      const lines = comingOn.map(([name, pos]) =>
+        `<span class="sname">${name}</span>, you're going on ${pos==='GK'?'in goals':'as'} <span class="spos ${pos}">${posLabel(pos)}</span>.`
+      );
+      body += lines.map(l=>`<div class="script-line">${l}</div>`).join('');
+    }
+
+    // Changing position
+    if (changing.length > 0) {
+      if (body) body += '<hr class="script-divider">';
+      const lines = changing.map(([name, pos]) =>
+        `<span class="sname">${name}</span>, move to <span class="spos ${pos}">${posLabel(pos)}</span>.`
+      );
+      body += lines.map(l=>`<div class="script-line">${l}</div>`).join('');
+    }
+
+    // Going off
+    if (goingOff.length > 0) {
+      if (body) body += '<hr class="script-divider">';
+      const names = goingOff.map(n=>`<span class="sname">${n}</span>`).join(', ');
+      body += `<div class="script-line"><span class="rest-names">${names} — come off for a rest. Well done!</span></div>`;
+    }
+
+    if (!body) body = '<div class="script-line" style="color:var(--muted);font-style:italic">No changes this rotation.</div>';
+
+    const scriptId = 'script-rot-' + ri;
+    html += `<div class="script-panel">
+      <div class="script-hdr collapsible-hdr" onclick="toggleSection('${scriptId}')">
+        <h3>${isHalftime ? '🔔 Halftime' : '🔔 ' + timeLabel}</h3>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="sub-time">${RT[ri][0]}</span>
+          <span class="collapse-arrow open" data-collapse="${scriptId}" style="font-size:.8rem;color:var(--muted)">▾</span>
+        </div>
+      </div>
+      <div class="collapsible-body open" id="${scriptId}">
+        <div class="script-body">${body}</div>
+      </div>
+    </div>`;
+  });
+
+  html += '</div>'; // close sec-scripts collapsible
+  return html;
+}
+
+function kickoffHTML(rot, gkName, timeSlot) {
+  let body = `<div class="script-line" style="color:var(--muted);font-style:italic;margin-bottom:8px">Starting lineup — read out before kick-off:</div>`;
+  body += `<div class="script-line"><span class="sname">${gkName}</span>, you're in <span class="spos GK">goals</span>.</div>`;
+  ['STR','MID','DEF'].forEach(pos => {
+    (rot[pos]||[]).forEach(p => {
+      body += `<div class="script-line"><span class="sname">${p.name}</span>, you're ${pos==='GK'?'in goals':'starting as'} <span class="spos ${pos}">${posLabel(pos)}</span>.</div>`;
+    });
+  });
+  if ((rot.REST||[]).length > 0) {
+    const names = rot.REST.map(p=>`<span class="sname">${p.name}</span>`).join(', ');
+    body += `<hr class="script-divider"><div class="script-line"><span class="rest-names">${names} — you'll start on the bench. You're on after the first whistle!</span></div>`;
+  }
+  return `<div class="script-panel">
+    <div class="script-hdr collapsible-hdr" onclick="toggleSection('script-kickoff')">
+      <h3>⚽ Kick-off</h3>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="sub-time">${timeSlot[0]}</span>
+        <span class="collapse-arrow open" data-collapse="script-kickoff" style="font-size:.8rem;color:var(--muted)">▾</span>
+      </div>
+    </div>
+    <div class="collapsible-body open" id="script-kickoff">
+      <div class="script-body">${body}</div>
+    </div>
+  </div>`;
+}
+
+function posLabel(pos) {
+  return {STR:'striker', MID:'midfielder', DEF:'defender', GK:'goalkeeper'}[pos] || pos;
+}
+
+// ── TIMER ────────────────────────────────────
+let timerInterval = null;
+let timerSecsLeft = 0;
+let timerTotalSecs = 0;
+let timerRunning = false;
+let timerRotIndex = 0; // current rotation index (0-based)
+
+function timerMinsFromConfig() {
+  const n = getAvail().length;
+  if (n >= 10) return 6.5;
+  return 5;
+}
+
+function timerInit() {
+  const mins = parseFloat(document.getElementById('timer-mins').value) || timerMinsFromConfig();
+  timerTotalSecs = Math.round(mins * 60);
+  timerSecsLeft = timerTotalSecs;
+  timerRunning = false;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  updateTimerDisplay();
+  document.getElementById('timer-startstop').textContent = '▶ Start';
+  document.getElementById('timer-startstop').classList.remove('running');
+}
+
+function timerStartStop() {
+  if (timerRunning) {
+    // Pause
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerRunning = false;
+    document.getElementById('timer-startstop').textContent = '▶ Start';
+    document.getElementById('timer-startstop').classList.remove('running');
+  } else {
+    // Start
+    if (timerSecsLeft <= 0) timerReset();
+    timerRunning = true;
+    document.getElementById('timer-startstop').textContent = '⏸ Pause';
+    document.getElementById('timer-startstop').classList.add('running');
+    timerInterval = setInterval(() => {
+      timerSecsLeft--;
+      updateTimerDisplay();
+      if (timerSecsLeft <= 0) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timerRunning = false;
+        document.getElementById('timer-startstop').textContent = '▶ Start';
+        document.getElementById('timer-startstop').classList.remove('running');
+        // Flash finished state
+        document.getElementById('timer-time').classList.add('urgent');
+        // Advance rotation label
+        timerRotIndex = Math.min(timerRotIndex + 1, 7);
+        updateTimerRotLabel();
+      }
+    }, 1000);
+  }
+}
+
+function timerReset() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerRunning = false;
+  const mins = parseFloat(document.getElementById('timer-mins').value) || timerMinsFromConfig();
+  timerTotalSecs = Math.round(mins * 60);
+  timerSecsLeft = timerTotalSecs;
+  document.getElementById('timer-startstop').textContent = '▶ Start';
+  document.getElementById('timer-startstop').classList.remove('running');
+  document.getElementById('timer-time').classList.remove('urgent');
+  updateTimerDisplay();
+}
+
+function timerNext() {
+  timerRotIndex = Math.min(timerRotIndex + 1, 7);
+  updateTimerRotLabel();
+  timerReset();
+}
+
+function timerSetMins(val) {
+  const mins = parseFloat(val);
+  if (!mins || mins <= 0) return;
+  timerTotalSecs = Math.round(mins * 60);
+  timerSecsLeft = timerTotalSecs;
+  timerRunning = false;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  document.getElementById('timer-startstop').textContent = '▶ Start';
+  document.getElementById('timer-startstop').classList.remove('running');
+  document.getElementById('timer-time').classList.remove('urgent');
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerSecsLeft / 60);
+  const s = timerSecsLeft % 60;
+  document.getElementById('timer-time').textContent = m + ':' + String(s).padStart(2,'0');
+  const el = document.getElementById('timer-time');
+  if (timerSecsLeft <= 30 && timerSecsLeft > 0 && timerRunning) {
+    el.classList.add('urgent');
+  } else if (timerSecsLeft > 30) {
+    el.classList.remove('urgent');
+  }
+}
+
+function updateTimerRotLabel() {
+  const labels = ['Kick-off','R1→R2','R2→R3','Halftime','R4→R5','R5→R6','R6→R7','R7→R8'];
+  const label = labels[timerRotIndex] || `R${timerRotIndex+1}`;
+  document.getElementById('timer-rot-label').textContent = label;
+}
+
+// Update timer default when squad size changes
+function syncTimerToSquad() {
+  const mins = timerMinsFromConfig();
+  const input = document.getElementById('timer-mins');
+  if (input && !timerRunning) {
+    input.value = mins;
+    timerSetMins(mins);
+  }
+}
+
+// ── COLLAPSIBLE SECTIONS ──────────────────────
+function toggleSection(id) {
+  const body = document.getElementById(id);
+  if (!body) return;
+  const arrow = document.querySelector(`[data-collapse="${id}"]`);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  body.classList.toggle('closed', isOpen);
+  if (arrow) {
+    arrow.classList.toggle('open', !isOpen);
+    arrow.classList.toggle('closed', isOpen);
+  }
+}
+
+function initCollapsibles() {
+  // All sections start open
+  document.querySelectorAll('.collapsible-body').forEach(el => {
+    el.classList.add('open');
+    el.classList.remove('closed');
+  });
+  document.querySelectorAll('.collapse-arrow').forEach(el => {
+    el.classList.add('open');
+    el.classList.remove('closed');
+  });
+}
+
+init();
+timerInit();
+initCollapsibles();
+</script>
+</body>
+</html>
