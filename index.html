@@ -248,6 +248,19 @@ table.sched tr:hover .ov-btns{opacity:1}
 #timer-mins:focus{outline:none;border-color:var(--muted)}
 #timer-mins-label{font-size:.7rem;color:var(--muted)}
 
+/* ── WAKE LOCK BUTTON ── */
+#wake-lock-btn{
+  padding:6px 10px;border-radius:20px;
+  border:1.5px solid var(--border);background:var(--card);
+  cursor:pointer;font-size:1rem;line-height:1;
+  transition:all .2s;flex-shrink:0;
+}
+#wake-lock-btn:hover{border-color:var(--muted)}
+#wake-lock-btn.active{
+  border-color:var(--yellow);
+  background:rgba(251,191,36,.15);
+}
+
 /* ── COLLAPSIBLE SECTIONS ── */
 .collapsible-hdr{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between}
 .collapsible-hdr:hover{opacity:.85}
@@ -310,6 +323,13 @@ table.sched tr:hover .ov-btns{opacity:1}
         <span id="timer-mins-label">min</span>
       </div>
     </div>
+
+    <div class="timer-bar-divider" style="margin-left:auto"></div>
+
+    <!-- ── WAKE LOCK TOGGLE ── -->
+    <button id="wake-lock-btn" onclick="toggleWakeLock()" title="Keep screen on during the game">
+      <span id="wake-lock-icon">☀️</span>
+    </button>
 
   </div>
 </div>
@@ -1451,6 +1471,52 @@ function kickoffHTML(rot, gkName, timeSlot) {
 function posLabel(pos) {
   return {STR:'striker', MID:'midfielder', DEF:'defender', GK:'goalkeeper'}[pos] || pos;
 }
+
+// ── WAKE LOCK ─────────────────────────────────
+let wakeLock = null;
+
+async function toggleWakeLock() {
+  if (wakeLock) {
+    // Turn off
+    await wakeLock.release();
+    wakeLock = null;
+    document.getElementById('wake-lock-btn').classList.remove('active');
+    document.getElementById('wake-lock-icon').textContent = '☀️';
+    document.getElementById('wake-lock-btn').title = 'Keep screen on during the game';
+  } else {
+    // Turn on
+    if (!('wakeLock' in navigator)) {
+      alert('Screen wake lock is not supported in this browser. Try Chrome or Safari 16.4+.');
+      return;
+    }
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      document.getElementById('wake-lock-btn').classList.add('active');
+      document.getElementById('wake-lock-icon').textContent = '🔆';
+      document.getElementById('wake-lock-btn').title = 'Screen staying on — tap to disable';
+
+      // Re-acquire if the page becomes visible again (e.g. after switching apps)
+      wakeLock.addEventListener('release', () => {
+        wakeLock = null;
+        document.getElementById('wake-lock-btn').classList.remove('active');
+        document.getElementById('wake-lock-icon').textContent = '☀️';
+      });
+    } catch (err) {
+      alert('Could not keep screen on: ' + err.message);
+    }
+  }
+}
+
+// Re-acquire wake lock when page becomes visible again
+document.addEventListener('visibilitychange', async () => {
+  if (wakeLock !== null && document.visibilityState === 'visible') {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      document.getElementById('wake-lock-btn').classList.add('active');
+      document.getElementById('wake-lock-icon').textContent = '🔆';
+    } catch (err) { /* silently fail */ }
+  }
+});
 
 // ── HALF TIMER ───────────────────────────────
 let halfTimerInterval = null;
