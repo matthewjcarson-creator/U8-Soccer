@@ -106,6 +106,41 @@ table.sched tr:hover td{background:rgba(255,255,255,.015)}
 .notes li{list-style:none}
 .notes li::before{content:"→ ";color:var(--yellow)}
 .placeholder{text-align:center;padding:50px 20px;color:var(--muted);font-size:.88rem}
+.rules-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:16px}
+.rule-builder{display:flex;flex-direction:column;gap:10px}
+.rule-builder-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rule-select,.rule-player-select{
+  padding:8px 12px;border-radius:10px;border:1.5px solid var(--border);
+  background:var(--card);color:var(--white);
+  font-family:'Outfit',sans-serif;font-size:.82rem;
+  cursor:pointer;flex:1;min-width:120px;
+}
+.rule-select:focus,.rule-player-select:focus{outline:none;border-color:var(--muted)}
+.rule-inputs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rule-between-label{font-size:.78rem;color:var(--muted);white-space:nowrap}
+.rule-add-btn{
+  padding:8px 18px;border-radius:20px;
+  border:1.5px solid var(--green-dim);background:rgba(74,222,128,.1);
+  color:var(--green);font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:700;
+  cursor:pointer;transition:all .15s;align-self:flex-start;
+}
+.rule-add-btn:hover{background:rgba(74,222,128,.2)}
+.rules-list{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.rule-chip{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;border-radius:10px;
+  background:var(--card);border:1px solid var(--border);
+  font-size:.82rem;
+}
+.rule-chip .rule-text{flex:1;color:var(--white)}
+.rule-chip .rule-icon{font-size:1rem;flex-shrink:0}
+.rule-chip .rule-delete{
+  background:none;border:none;color:var(--rest-text);
+  cursor:pointer;font-size:1rem;padding:0 2px;line-height:1;
+  transition:color .15s;
+}
+.rule-chip .rule-delete:hover{color:var(--str)}
+.rule-warning{font-size:.72rem;color:var(--yellow);margin-top:6px;display:flex;align-items:center;gap:5px}
 .ov-cell{display:flex;flex-direction:column;align-items:center;gap:3px}
 .ov-btns{display:flex;gap:2px;opacity:0;transition:opacity .15s}
 table.sched tr:hover .ov-btns{opacity:1}
@@ -137,36 +172,67 @@ table.sched tr:hover .ov-btns{opacity:1}
 .lock-btn.active.DEF{background:rgba(59,130,246,.25);border-color:var(--def)}
 .lock-icon{font-size:.65rem;margin-left:2px}
 
-/* ── STICKY TIMER ── */
+/* ── STICKY TIMER BAR ── */
 #timer-bar{
   position:sticky;top:0;z-index:100;
-  background:rgba(10,26,12,.92);
+  background:rgba(10,26,12,.95);
   backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);
-  padding:0;
 }
 #timer-bar-inner{
   max-width:1020px;margin:0 auto;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 16px;gap:12px;flex-wrap:wrap;
+  display:flex;align-items:center;
+  padding:8px 16px;gap:0;
 }
-#timer-display{display:flex;align-items:baseline;gap:10px}
+.timer-bar-divider{
+  width:1px;background:var(--border);
+  align-self:stretch;margin:0 14px;flex-shrink:0;
+}
+
+/* ── HALF TIMER (left) ── */
+#half-timer{display:flex;flex-direction:column;gap:5px;min-width:0}
+#half-timer-top{display:flex;align-items:baseline;gap:10px}
+#half-label{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:.78rem;font-weight:700;letter-spacing:2px;
+  color:var(--muted);text-transform:uppercase;white-space:nowrap;
+}
+#half-time{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:2.4rem;font-weight:900;letter-spacing:1px;
+  color:var(--green);line-height:1;transition:color .3s;white-space:nowrap;
+}
+#half-time.halftime{color:var(--yellow);}
+#half-time.overtime{color:var(--str);}
+#half-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#half-controls button{
+  font-family:'Outfit',sans-serif;font-size:.75rem;font-weight:700;
+  padding:5px 11px;border-radius:20px;border:1.5px solid var(--border);
+  background:var(--card);color:var(--white);cursor:pointer;transition:all .15s;
+}
+#half-controls button:hover{border-color:var(--muted)}
+#half-startstop{border-color:var(--green-dim)!important;color:var(--green)!important;}
+#half-startstop.running{border-color:var(--str)!important;color:#f87171!important;}
+#half-next-btn{border-color:var(--yellow)!important;color:var(--yellow)!important;font-size:.7rem!important;}
+
+/* ── ROTATION TIMER (right) ── */
+#rot-timer{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:1;min-width:0}
+#timer-display{display:flex;align-items:baseline;gap:8px}
 #timer-rot-label{
   font-family:'Barlow Condensed',sans-serif;
-  font-size:.9rem;font-weight:700;letter-spacing:2px;
-  color:var(--muted);text-transform:uppercase;
+  font-size:.78rem;font-weight:700;letter-spacing:2px;
+  color:var(--muted);text-transform:uppercase;white-space:nowrap;
 }
 #timer-time{
   font-family:'Barlow Condensed',sans-serif;
-  font-size:2.4rem;font-weight:900;letter-spacing:2px;
-  color:var(--yellow);line-height:1;
-  transition:color .3s;
+  font-size:2.4rem;font-weight:900;letter-spacing:1px;
+  color:var(--yellow);line-height:1;transition:color .3s;white-space:nowrap;
 }
 #timer-time.urgent{color:var(--str);}
-#timer-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#timer-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 #timer-controls button{
-  font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:700;
-  padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);
+  font-family:'Outfit',sans-serif;font-size:.75rem;font-weight:700;
+  padding:5px 11px;border-radius:20px;border:1.5px solid var(--border);
   background:var(--card);color:var(--white);cursor:pointer;transition:all .15s;
 }
 #timer-controls button:hover{border-color:var(--muted)}
@@ -174,13 +240,13 @@ table.sched tr:hover .ov-btns{opacity:1}
 #timer-startstop.running{border-color:var(--str)!important;color:#f87171!important;}
 #timer-next{border-color:var(--yellow)!important;color:var(--yellow)!important;}
 #timer-mins{
-  width:52px;padding:5px 6px;border-radius:8px;
+  width:48px;padding:4px 6px;border-radius:8px;
   border:1.5px solid var(--border);background:var(--card);
-  color:var(--white);font-family:'Outfit',sans-serif;font-size:.78rem;
+  color:var(--white);font-family:'Outfit',sans-serif;font-size:.75rem;
   text-align:center;
 }
 #timer-mins:focus{outline:none;border-color:var(--muted)}
-#timer-mins-label{font-size:.72rem;color:var(--muted)}
+#timer-mins-label{font-size:.7rem;color:var(--muted)}
 
 /* ── COLLAPSIBLE SECTIONS ── */
 .collapsible-hdr{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between}
@@ -214,17 +280,37 @@ table.sched tr:hover .ov-btns{opacity:1}
 <body>
 <div id="timer-bar">
   <div id="timer-bar-inner">
-    <div id="timer-display">
-      <span id="timer-rot-label">R1</span>
-      <span id="timer-time">6:30</span>
+
+    <!-- ── HALF TIMER (left) ── -->
+    <div id="half-timer">
+      <div id="half-timer-top">
+        <span id="half-label">1ST HALF</span>
+        <span id="half-time">0:00</span>
+      </div>
+      <div id="half-controls">
+        <button id="half-startstop" onclick="halfTimerToggle()">▶ Start</button>
+        <button id="half-reset-btn" onclick="halfTimerReset()" title="Reset half">↺</button>
+        <button id="half-next-btn" onclick="halfTimerNextHalf()" title="Start 2nd half">2nd Half →</button>
+      </div>
     </div>
-    <div id="timer-controls">
-      <button id="timer-startstop" onclick="timerStartStop()">▶ Start</button>
-      <button id="timer-reset" onclick="timerReset()">↺ Reset</button>
-      <button id="timer-next" onclick="timerNext()" title="Next rotation">Next ›</button>
-      <input id="timer-mins" type="number" min="1" max="20" step="0.5" value="6.5" onchange="timerSetMins(this.value)" title="Edit duration (minutes)">
-      <span id="timer-mins-label">min</span>
+
+    <div class="timer-bar-divider"></div>
+
+    <!-- ── ROTATION TIMER (right) ── -->
+    <div id="rot-timer">
+      <div id="timer-display">
+        <span id="timer-rot-label">R1</span>
+        <span id="timer-time">6:30</span>
+      </div>
+      <div id="timer-controls">
+        <button id="timer-startstop" onclick="timerStartStop()">▶ Start</button>
+        <button id="timer-reset" onclick="timerReset()">↺ Reset</button>
+        <button id="timer-next" onclick="timerNext()" title="Next rotation">Next ›</button>
+        <input id="timer-mins" type="number" min="1" max="20" step="0.5" value="6.5" onchange="timerSetMins(this.value)" title="Edit duration (minutes)">
+        <span id="timer-mins-label">min</span>
+      </div>
     </div>
+
   </div>
 </div>
 
@@ -255,7 +341,26 @@ table.sched tr:hover .ov-btns{opacity:1}
   </div>
 </div>
 
-<div class="section-label collapsible-hdr" onclick="toggleSection('sec-gk')">③ Select Goalkeepers <span class="collapse-arrow open" data-collapse="sec-gk">▾</span></div>
+<div class="section-label collapsible-hdr" onclick="toggleSection('sec-rules')">③ Rules <span class="collapse-arrow open" data-collapse="sec-rules">▾</span></div>
+<div class="collapsible-body open" id="sec-rules">
+  <div class="rules-panel">
+    <div class="rule-builder" id="ruleBuilder">
+      <div class="rule-builder-row">
+        <select id="ruleType" onchange="updateRuleBuilder()" class="rule-select">
+          <option value="">— Choose a rule —</option>
+          <option value="never_bench_together">Never bench together</option>
+          <option value="start_bench">Must start on bench</option>
+          <option value="start_field">Must start on field</option>
+        </select>
+      </div>
+      <div id="ruleInputs" class="rule-inputs"></div>
+      <button class="rule-add-btn" onclick="addRule()" id="ruleAddBtn" style="display:none">+ Add Rule</button>
+    </div>
+    <div class="rules-list" id="rulesList"></div>
+  </div>
+</div>
+
+<div class="section-label collapsible-hdr" onclick="toggleSection('sec-gk')">④ Select Goalkeepers <span class="collapse-arrow open" data-collapse="sec-gk">▾</span></div>
 <div class="collapsible-body open" id="sec-gk">
 <div class="gk-panel" style="margin-top:0">
   <div class="gk-half h1"><div class="gk-half-label">🧤 1st Half GK</div><div class="gk-buttons" id="gkBtns1"></div></div>
@@ -303,10 +408,13 @@ function getGameConfig(n) {
       times: buildRotTimes(4, [0,5,10,15,20,25,30,35,40]),
     };
   } else if (n === 8) {
+    // GKs play both their GK half and their outfield half (no rest).
+    // 6 non-GK players share 6 rest slots: 3 per half, 1 per rotation.
+    // Same 6.5 min rotation interval as a full squad.
     return {
-      rotsPerHalf: 4, restPerRot: 1,
-      label: '4 rotations per half · 5:00 each · 1 rest per game',
-      times: buildRotTimes(4, [0,5,10,15,20,25,30,35,40]),
+      rotsPerHalf: 3, restPerRot: 1,
+      label: '3 rotations per half · 6:30 each · GKs play full game',
+      times: buildRotTimes(3, [0,6.5,13,20,26.5,33,40]),
     };
   } else {
     // 7 players: 1 GK + 6 outfield, no subs, no rest — everyone plays the full game
@@ -337,6 +445,8 @@ let formation = '2-2-2'; // '2-2-2' or '2-3-1'
 let locked = {}; // {playerName: 'STR'|'MID'|'DEF'|null}
 // overrides: { 'PlayerName:rotIndex': 'REST'|'STR'|'MID'|'DEF' }
 let overrides = {};
+// rules: array of constraint objects applied during rest-group formation
+let rules = [];
 
 // ── PERSISTENCE ───────────────────────────────
 function savePrefs() {
@@ -381,6 +491,15 @@ function loadOverrides() {
     if (s) overrides = JSON.parse(s);
   } catch(e) {}
 }
+function saveRules() {
+  try { localStorage.setItem('u8_rules', JSON.stringify(rules)); } catch(e) {}
+}
+function loadRules() {
+  try {
+    const s = localStorage.getItem('u8_rules');
+    if (s) rules = JSON.parse(s);
+  } catch(e) {}
+}
 function saveNames() {
   try { localStorage.setItem('u8_names', JSON.stringify(ALL_PLAYERS.map(p => p.name))); } catch(e) {}
 }
@@ -400,7 +519,7 @@ function loadNames() {
 // ── UI ────────────────────────────────────────
 function getAvail() { return ALL_PLAYERS.filter(p=>!unavail.has(p.name)); }
 
-function init() { loadNames(); loadPrefs(); loadFormation(); loadLocks(); loadOverrides(); buildFormationUI(); buildRoster(); buildGKPanels(); updateCount(); }
+function init() { loadNames(); loadPrefs(); loadFormation(); loadLocks(); loadOverrides(); loadRules(); buildFormationUI(); buildRulesUI(); buildRoster(); buildGKPanels(); updateCount(); }
 
 function buildRoster() {
   const g = document.getElementById('rosterGrid');
@@ -666,10 +785,11 @@ function buildSchedule(players, gk1name, gk2name) {
   // player gets exactly one rest rotation across the whole game.
   const {h1RestNames, h2RestNames} = planRests(players, gk1name, gk2name, cfg);
 
-  const half1 = buildHalf(players.filter(p=>p.name!==gk1name), cfg, played, h1RestNames, null);
+  const half1 = buildHalf(players.filter(p=>p.name!==gk1name), cfg, played, h1RestNames, null, null);
   // Extract H1 rest groups for continuity checking in H2
   const h1RestGroups = half1.map(rot => rot.REST);
-  const half2 = buildHalf(players.filter(p=>p.name!==gk2name), cfg, played, h2RestNames, h1RestGroups);
+  // Pass gk1name so H2 knows GK1 must start on the pitch (not immediately bench)
+  const half2 = buildHalf(players.filter(p=>p.name!==gk2name), cfg, played, h2RestNames, h1RestGroups, gk1name);
 
   applyOverrides(half1, half2, players, gkP1, gkP2, cfg);
   return { gkP1, gkP2, half1, half2, players, cfg };
@@ -694,11 +814,13 @@ function planRests(players, gk1name, gk2name, cfg) {
     return { h1RestNames: null, h2RestNames: null };
   }
 
-  // 8-player squad: restPerRot === 1
+  // 8-player squad: restPerRot === 1, 3 rotations per half.
+  // GKs play the FULL game (GK half + full outfield half, no rest).
+  // Only the 6 non-GK players rest: 3 in H1, 3 in H2.
   const nonGK = players.filter(p => p.name !== gk1name && p.name !== gk2name);
   // nonGK.length === 6
 
-  // Interleave nonGK by pref to spread position types
+  // Interleave nonGK by pref to spread position types across rest slots
   const byPref = {STR:[], MID:[], DEF:[]};
   nonGK.forEach(p => byPref[p.pref].push(p));
   const sorted = [];
@@ -707,25 +829,26 @@ function planRests(players, gk1name, gk2name, cfg) {
     POS.forEach(pos => { if(byPref[pos][i]) sorted.push(byPref[pos][i]); });
   }
 
-  // First 3 rest in H1, last 3 rest in H2
-  const restH1nonGK = sorted.slice(0, 3).map(p => p.name);
-  const restH2nonGK = sorted.slice(3, 6).map(p => p.name);
-
-  // GK2 rests in H1 (outfield in H1, GK in H2)
-  // GK1 rests in H2 (GK in H1, outfield in H2)
-  const h1RestNames = new Set([gk2name, ...restH1nonGK]);
-  const h2RestNames = new Set([gk1name, ...restH2nonGK]);
+  // First 3 rest in H1, last 3 rest in H2. GKs are NOT in either set.
+  const h1RestNames = new Set(sorted.slice(0, 3).map(p => p.name));
+  const h2RestNames = new Set(sorted.slice(3, 6).map(p => p.name));
 
   return { h1RestNames, h2RestNames };
 }
 
 // buildHalf: produce rotsPerHalf rotations, each with 6 active and restPerRot resting.
 // h1RestGroups: the rest groups from H1, used by H2 to check halftime continuity rules.
-function buildHalf(pool, cfg, played, presetRestNames, h1RestGroups) {
+// h1GKname: the GK who played all of H1 — treated as "rested last" so they start H2 on the pitch.
+function buildHalf(pool, cfg, played, presetRestNames, h1RestGroups, h1GKname) {
   const rotsPerHalf = cfg.rotsPerHalf;
-  // If this is H2, extract names of who rested first/last in H1 for rule checking
-  const h1LastRestNames  = h1RestGroups ? new Set(h1RestGroups[rotsPerHalf-1].map(p=>p.name)) : null;
+  // If this is H2, extract names of who rested first/last in H1 for rule checking.
+  // Also add GK1 to h1LastRestNames — they were off the whole of H1 so must start H2 on the pitch.
+  let h1LastRestNames  = h1RestGroups ? new Set(h1RestGroups[rotsPerHalf-1].map(p=>p.name)) : null;
   const h1FirstRestNames = h1RestGroups ? new Set(h1RestGroups[0].map(p=>p.name)) : null;
+  if (h1GKname) {
+    if (!h1LastRestNames) h1LastRestNames = new Set();
+    h1LastRestNames.add(h1GKname);
+  }
 
   const restGroups = buildRestGroups(pool, cfg, presetRestNames, h1LastRestNames, h1FirstRestNames);
 
@@ -764,6 +887,7 @@ function buildRestGroups(pool, cfg, presetRestNames, h1LastRestNames, h1FirstRes
 
     // Fix rule violations if this is H2 (h1LastRestNames provided)
     if (h1LastRestNames) fixRestViolations(groups, h1LastRestNames, h1FirstRestNames, rotsPerHalf);
+    applyRuleConstraints(groups, h1LastRestNames ? 1 : 0);
 
     return groups;
   }
@@ -777,6 +901,7 @@ function buildRestGroups(pool, cfg, presetRestNames, h1LastRestNames, h1FirstRes
 
   // Fix violations for 8-player H2 too
   if (h1LastRestNames) fixRestViolations(groups, h1LastRestNames, h1FirstRestNames, rotsPerHalf);
+  applyRuleConstraints(groups, h1LastRestNames ? 1 : 0);
 
   return groups;
 }
@@ -897,6 +1022,35 @@ function assignPositions(active, played) {
 }
 
 // ── RENDER ────────────────────────────────────
+function checkRuleViolations(half1, half2, cfg) {
+  // Returns array of human-readable violations found in the schedule
+  const violations = [];
+  const allRots = [...half1, ...half2];
+  rules.forEach(rule => {
+    if (rule.type === 'never_bench_together') {
+      allRots.forEach((rot, ri) => {
+        const rest = (rot.REST||[]).map(p=>p.name);
+        if (rest.includes(rule.players[0]) && rest.includes(rule.players[1])) {
+          violations.push(`${rule.players[0]} & ${rule.players[1]} both sit in R${ri+1}`);
+        }
+      });
+    }
+    if (rule.type === 'start_bench') {
+      const rot0rest = (half1[0]?.REST||[]).map(p=>p.name);
+      if (!rot0rest.includes(rule.player)) {
+        violations.push(`${rule.player} doesn't start on the bench`);
+      }
+    }
+    if (rule.type === 'start_field') {
+      const rot0rest = (half1[0]?.REST||[]).map(p=>p.name);
+      if (rot0rest.includes(rule.player)) {
+        violations.push(`${rule.player} starts on the bench (rule says must start on field)`);
+      }
+    }
+  });
+  return violations;
+}
+
 function render() {
   if (!sched) return;
   const {gkP1, gkP2, half1, half2, players, cfg} = sched;
@@ -941,6 +1095,9 @@ function render() {
     </div>
     <div class="gk-note-tag">🧤 ${gkP1.name} H1 · ${gkP2.name} H2</div>
   </div>
+  ${checkRuleViolations(half1, half2, cfg).map(v =>
+    `<div class="rule-warning">⚠️ Rule conflict: ${v}</div>`
+  ).join('')}
 
   <div class="section-label collapsible-hdr" onclick="toggleSection('sec-pitch')">④ Pitch View — tap a rotation <span class="collapse-arrow" data-collapse="sec-pitch">▾</span></div>
   <div class="collapsible-body" id="sec-pitch">
@@ -1007,6 +1164,7 @@ function render() {
 
   document.getElementById('output').innerHTML = html;
   buildFormationUI();
+  buildRulesUI();
   initCollapsibles();
 }
 
@@ -1294,7 +1452,98 @@ function posLabel(pos) {
   return {STR:'striker', MID:'midfielder', DEF:'defender', GK:'goalkeeper'}[pos] || pos;
 }
 
-// ── TIMER ────────────────────────────────────
+// ── HALF TIMER ───────────────────────────────
+let halfTimerInterval = null;
+let halfTimerSecs = 0;
+let halfTimerRunning = false;
+let currentHalf = 1;
+const HALF_SECS = 20 * 60; // 1200
+
+function halfTimerToggle() {
+  if (halfTimerRunning) {
+    clearInterval(halfTimerInterval);
+    halfTimerInterval = null;
+    halfTimerRunning = false;
+    document.getElementById('half-startstop').textContent = '▶ Start';
+    document.getElementById('half-startstop').classList.remove('running');
+  } else {
+    halfTimerRunning = true;
+    document.getElementById('half-startstop').textContent = '⏸ Pause';
+    document.getElementById('half-startstop').classList.add('running');
+    halfTimerInterval = setInterval(() => {
+      halfTimerSecs++;
+      updateHalfDisplay();
+    }, 1000);
+  }
+}
+
+function halfTimerReset() {
+  clearInterval(halfTimerInterval);
+  halfTimerInterval = null;
+  halfTimerRunning = false;
+  halfTimerSecs = 0;
+  document.getElementById('half-startstop').textContent = '▶ Start';
+  document.getElementById('half-startstop').classList.remove('running');
+  updateHalfDisplay();
+}
+
+function halfTimerNextHalf() {
+  clearInterval(halfTimerInterval);
+  halfTimerInterval = null;
+  halfTimerRunning = false;
+  halfTimerSecs = 0;
+  currentHalf = 2;
+  document.getElementById('half-startstop').textContent = '▶ Start';
+  document.getElementById('half-startstop').classList.remove('running');
+  document.getElementById('half-next-btn').style.display = 'none';
+  updateHalfDisplay();
+}
+
+function updateHalfDisplay() {
+  const m = Math.floor(halfTimerSecs / 60);
+  const s = halfTimerSecs % 60;
+  const timeEl = document.getElementById('half-time');
+  const labelEl = document.getElementById('half-label');
+
+  timeEl.textContent = m + ':' + String(s).padStart(2, '0');
+
+  if (halfTimerSecs >= HALF_SECS && currentHalf === 1) {
+    // Past 20 min in H1
+    labelEl.textContent = 'HALF TIME';
+    timeEl.classList.remove('overtime');
+    timeEl.classList.add('halftime');
+    // Show next half button, pause if running
+    document.getElementById('half-next-btn').style.display = '';
+    if (halfTimerRunning) {
+      clearInterval(halfTimerInterval);
+      halfTimerInterval = null;
+      halfTimerRunning = false;
+      document.getElementById('half-startstop').textContent = '▶ Start';
+      document.getElementById('half-startstop').classList.remove('running');
+    }
+  } else if (halfTimerSecs > HALF_SECS && currentHalf === 2) {
+    // Overtime in H2
+    labelEl.textContent = '2ND HALF';
+    timeEl.classList.remove('halftime');
+    timeEl.classList.add('overtime');
+  } else {
+    labelEl.textContent = currentHalf === 1 ? '1ST HALF' : '2ND HALF';
+    timeEl.classList.remove('halftime', 'overtime');
+  }
+}
+
+// Initialise half timer display
+function halfTimerInit() {
+  currentHalf = 1;
+  halfTimerSecs = 0;
+  halfTimerRunning = false;
+  clearInterval(halfTimerInterval);
+  halfTimerInterval = null;
+  document.getElementById('half-next-btn').style.display = 'none';
+  updateHalfDisplay();
+}
+
+// ── ROTATION TIMER ────────────────────────────
 let timerInterval = null;
 let timerSecsLeft = 0;
 let timerTotalSecs = 0;
@@ -1439,7 +1688,167 @@ function initCollapsibles() {
   });
 }
 
+// ── RULES ─────────────────────────────────────
+const RULE_LABELS = {
+  never_bench_together: 'Never bench together',
+  start_bench:          'Must start on bench',
+  start_field:          'Must start on field',
+};
+
+function updateRuleBuilder() {
+  const type = document.getElementById('ruleType').value;
+  const inputsEl = document.getElementById('ruleInputs');
+  const addBtn = document.getElementById('ruleAddBtn');
+  
+  if (!type) { inputsEl.innerHTML = ''; addBtn.style.display = 'none'; return; }
+
+  const players = getAvail().map(p =>
+    `<option value="${p.name}">${p.name}</option>`
+  ).join('');
+
+  if (type === 'never_bench_together') {
+    inputsEl.innerHTML = `
+      <select id="ruleP1" class="rule-player-select"><option value="">Player 1...</option>${players}</select>
+      <span class="rule-between-label">and</span>
+      <select id="ruleP2" class="rule-player-select"><option value="">Player 2...</option>${players}</select>`;
+  } else {
+    inputsEl.innerHTML = `
+      <select id="ruleP1" class="rule-player-select"><option value="">Select player...</option>${players}</select>`;
+  }
+  addBtn.style.display = 'block';
+}
+
+function addRule() {
+  const type = document.getElementById('ruleType').value;
+  const p1 = document.getElementById('ruleP1')?.value;
+  const p2 = document.getElementById('ruleP2')?.value;
+
+  if (!type || !p1) return;
+  if (type === 'never_bench_together') {
+    if (!p2 || p1 === p2) return;
+    // Check for duplicate
+    if (rules.some(r => r.type === type &&
+        ((r.players[0]===p1&&r.players[1]===p2)||(r.players[0]===p2&&r.players[1]===p1)))) return;
+    rules.push({ type, players: [p1, p2] });
+  } else {
+    if (rules.some(r => r.type === type && r.player === p1)) return;
+    rules.push({ type, player: p1 });
+  }
+
+  saveRules();
+  buildRulesUI();
+  tryGen();
+  // Reset builder
+  document.getElementById('ruleType').value = '';
+  updateRuleBuilder();
+}
+
+function deleteRule(idx) {
+  rules.splice(idx, 1);
+  saveRules();
+  buildRulesUI();
+  tryGen();
+}
+
+function buildRulesUI() {
+  const el = document.getElementById('rulesList');
+  if (!el) return;
+  if (!rules.length) { el.innerHTML = '<div style="font-size:.78rem;color:var(--muted);font-style:italic">No rules added yet.</div>'; return; }
+  el.innerHTML = rules.map((rule, i) => {
+    let icon, text;
+    if (rule.type === 'never_bench_together') {
+      icon = '🚫'; text = `<b>${rule.players[0]}</b> and <b>${rule.players[1]}</b> must never sit out together`;
+    } else if (rule.type === 'start_bench') {
+      icon = '💤'; text = `<b>${rule.player}</b> starts the game on the bench`;
+    } else if (rule.type === 'start_field') {
+      icon = '▶️'; text = `<b>${rule.player}</b> must start the game on the field`;
+    }
+    return `<div class="rule-chip">
+      <span class="rule-icon">${icon}</span>
+      <span class="rule-text">${text}</span>
+      <button class="rule-delete" onclick="deleteRule(${i})" title="Remove rule">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ── APPLY RULES TO REST GROUPS ────────────────────────────────────────────
+// Called at the end of buildRestGroups before returning.
+// halfIndex: 0=H1, 1=H2
+function applyRuleConstraints(groups, halfIndex) {
+  if (!rules.length) return;
+
+  rules.forEach(rule => {
+
+    // ── never_bench_together ─────────────────────────────────────────────
+    if (rule.type === 'never_bench_together') {
+      const [pA, pB] = rule.players;
+      for (let g = 0; g < groups.length; g++) {
+        const idxA = groups[g].findIndex(p => p.name === pA);
+        const idxB = groups[g].findIndex(p => p.name === pB);
+        if (idxA >= 0 && idxB >= 0) {
+          // Both in same rest group — move pB to another group
+          const playerB = groups[g][idxB];
+          let moved = false;
+          for (let k = 0; k < groups.length && !moved; k++) {
+            if (k === g) continue;
+            for (let j = 0; j < groups[k].length && !moved; j++) {
+              const cand = groups[k][j];
+              // Don't swap with pA (would still be together) or pB itself
+              if (cand.name !== pA && cand.name !== pB) {
+                groups[g][idxB] = cand;
+                groups[k][j] = playerB;
+                moved = true;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // ── start_bench: player rests in rotation 0 of H1 ───────────────────
+    if (rule.type === 'start_bench' && halfIndex === 0) {
+      const name = rule.player;
+      // Already in group[0]?
+      if (groups[0] && groups[0].some(p => p.name === name)) return;
+      // Find player in another group and swap into group[0]
+      for (let g = 1; g < groups.length; g++) {
+        const idx = groups[g].findIndex(p => p.name === name);
+        if (idx >= 0 && groups[0].length > 0) {
+          const swapTarget = groups[0][0];
+          groups[0][0] = groups[g][idx];
+          groups[g][idx] = swapTarget;
+          break;
+        } else if (idx >= 0) {
+          // groups[0] is empty (7-player no-rest mode) — just add
+          groups[0].push(groups[g].splice(idx, 1)[0]);
+          break;
+        }
+      }
+    }
+
+    // ── start_field: player does NOT rest in rotation 0 of H1 ───────────
+    if (rule.type === 'start_field' && halfIndex === 0) {
+      const name = rule.player;
+      if (!groups[0]) return;
+      const idx = groups[0].findIndex(p => p.name === name);
+      if (idx >= 0 && groups.length > 1) {
+        // Swap player with first player in group[1]
+        if (groups[1].length > 0) {
+          const swapTarget = groups[1][0];
+          groups[1][0] = groups[0][idx];
+          groups[0][idx] = swapTarget;
+        } else if (groups.length > 2 && groups[2].length > 0) {
+          const swapTarget = groups[2][0];
+          groups[2][0] = groups[0][idx];
+          groups[0][idx] = swapTarget;
+        }
+      }
+    }
+  });
+}
+
 init();
+halfTimerInit();
 timerInit();
 initCollapsibles();
 </script>
